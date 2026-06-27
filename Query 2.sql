@@ -1,2 +1,0 @@
-USE weather_app_db;
-ALTER TABLE WEATHER_LOG ADD COLUMN humidity INT;
