@@ -244,7 +244,7 @@ Widget _buildFeedbackChoice({
 
   bool showBubble = false;
 
-  final int temperature = 30;
+  final int temperature = 4;
   final String weather = '맑음';
   final String dust = '보통';
 
@@ -257,9 +257,20 @@ Widget _buildFeedbackChoice({
       return 'assets/characters/dragon_outfit_short_long.png';
     }
 
-    return 'assets/characters/dragon_outfit_long_long.png';
-  }
+    if (temperature >= 16) {
+      return 'assets/characters/dragon_outfit_long_long.png';
+    }
 
+    if (temperature >= 12) {
+      return 'assets/characters/dragon_outfit_cardigan.png';
+    }
+
+    if (temperature >= 8) {
+      return 'assets/characters/dragon_outfit_zipup.png';
+    }
+
+    return 'assets/characters/dragon_outfit_padding.png';
+  }
   String get outfitMessage {
     if (widget.coldLevel == '잘탐') {
       return '긴팔과 긴바지에 가디건을 챙기면 좋아요.';
