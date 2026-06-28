@@ -47,47 +47,16 @@ class StartScreen extends StatelessWidget {
                     ),
 
                     const Spacer(),
-
-                    // 수룡 캐릭터 임시 영역
-                    // 나중에 실제 캐릭터 PNG로 교체 예정
-                    Container(
-                      width: 270,
-                      height: 270,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(44),
-                        boxShadow: [
-                          BoxShadow(
-                            color: sungshinViolet.withOpacity(0.12),
-                            blurRadius: 32,
-                            offset: const Offset(0, 14),
-                          ),
-                        ],
+                    //수룡 캐릭터
+                    SizedBox(
+                      width: 500,
+                      height: 500,
+                      child: Image.asset(
+                        'assets/characters/dragon_base.png',
+                        fit: BoxFit.contain,
                       ),
-                      child: Center(
-                        child: Container(
-                          width: 220,
-                          height: 220,
-                          decoration: BoxDecoration(
-                            color: softViolet,
-                            borderRadius: BorderRadius.circular(38),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '수룡\n캐릭터',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.w800,
-                                height: 1.35,
-                                color: sungshinBrightViolet,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
+                    ),  
+                    
                     const Spacer(),
 
                     SizedBox(

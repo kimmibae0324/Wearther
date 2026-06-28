@@ -65,7 +65,7 @@ void _showWeeklyFeedbackDialog() {
                   const SizedBox(height: 10),
 
                   const Text(
-                    '더 잘 맞는 옷차림 추천을 위해\n간단히 알려주세요',
+                    '더 잘 맞는 옷차림을 추천해드릴게요!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -77,22 +77,12 @@ void _showWeeklyFeedbackDialog() {
 
                   const SizedBox(height: 22),
 
-                  Container(
-                    width: 112,
-                    height: 112,
-                    decoration: BoxDecoration(
-                      color: softViolet,
-                      borderRadius: BorderRadius.circular(34),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '수룡',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: sungshinBrightViolet,
-                        ),
-                      ),
+                  SizedBox(
+                    width: 180,
+                    height: 180,
+                    child: Image.asset(
+                      'assets/characters/dragon_base.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
 
@@ -415,9 +405,10 @@ Widget _buildWeatherCard() {
       ),
       child: Row(
         children: [
-          const Text(
-            '☀️',
-            style: TextStyle(fontSize: 46),
+          const Icon(
+            Icons.wb_sunny_rounded,
+            size: 52,
+            color: Color(0xFFF2B943),
           ),
           const SizedBox(width: 18),
           Column(
@@ -513,42 +504,13 @@ Widget _buildWeatherCard() {
             ),
 
           Positioned(
-            bottom: 58,
-            child: Container(
-              width: 210,
-              height: 230,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.92),
-                borderRadius: BorderRadius.circular(42),
-                boxShadow: [
-                  BoxShadow(
-                    color: sungshinViolet.withOpacity(0.1),
-                    blurRadius: 26,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Container(
-                  width: 170,
-                  height: 185,
-                  decoration: BoxDecoration(
-                    color: softViolet,
-                    borderRadius: BorderRadius.circular(36),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '수룡\n+ 옷차림',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w900,
-                        height: 1.35,
-                        color: sungshinBrightViolet,
-                      ),
-                    ),
-                  ),
-                ),
+            bottom: 43,
+            child: SizedBox(
+              width: 400,
+              height: 400,
+              child: Image.asset(
+                'assets/characters/dragon_base.png',
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -577,9 +539,10 @@ Widget _buildWeatherCard() {
                   ],
                 ),
                 child: const Center(
-                  child: Text(
-                    '🔮',
-                    style: TextStyle(fontSize: 36),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 36,
+                    color: sungshinBrightViolet,
                   ),
                 ),
               ),
