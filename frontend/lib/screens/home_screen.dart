@@ -493,41 +493,9 @@ Widget _buildWeatherCard() {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          if (showBubble)
-            Positioned(
-              top: 20,
-              child: Container(
-                width: 260,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.88),
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: sungshinViolet.withOpacity(0.12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  outfitMessage,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    height: 1.4,
-                    color: textDark,
-                  ),
-                ),
-              ),
-            ),
-
+          // 수룡 캐릭터
           Positioned(
-            bottom: 70,
+            bottom: 60,
             child: SizedBox(
               width: 330,
               height: 330,
@@ -538,35 +506,30 @@ Widget _buildWeatherCard() {
             ),
           ),
 
+          // 수정구에서 나오는 마법 말풍선
+          if (showBubble)
+            Positioned(
+              right: 72,
+              bottom: 168,
+              child: _buildMagicBubble(),
+            ),
+
+          // 수정구 버튼
           Positioned(
-            right: 28,
-            bottom: 72,
+            right: 18,
+            bottom: 42,
             child: GestureDetector(
               onTap: () {
                 setState(() {
                   showBubble = !showBubble;
                 });
               },
-              child: Container(
-                width: 74,
-                height: 74,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: sungshinViolet.withOpacity(0.18),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 36,
-                    color: sungshinBrightViolet,
-                  ),
+              child: SizedBox(
+                width: 112,
+                height: 112,
+                child: Image.asset(
+                  'assets/objects/crystal_ball.png',
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
@@ -575,6 +538,96 @@ Widget _buildWeatherCard() {
       ),
     );
   }
+
+  Widget _buildMagicBubble() {
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      // 말풍선 본체
+      Container(
+        width: 230,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: sungshinViolet.withOpacity(0.16),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Text(
+          outfitMessage,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            height: 1.4,
+            color: textDark,
+          ),
+        ),
+      ),
+
+      // 수정구 쪽으로 이어지는 마법 연기
+      Positioned(
+        right: 22,
+        bottom: -46,
+        child: Column(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.82),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: sungshinBrightViolet.withOpacity(0.18),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.68),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.55),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // 작은 마법 반짝이
+      Positioned(
+        right: 12,
+        top: -8,
+        child: Icon(
+          Icons.auto_awesome_rounded,
+          size: 20,
+          color: sungshinBrightViolet.withOpacity(0.75),
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _buildRecommendCard() {
     return Container(
