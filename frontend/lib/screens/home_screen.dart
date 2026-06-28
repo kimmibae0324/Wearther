@@ -249,6 +249,15 @@ Widget _buildFeedbackChoice({
   final String dust = '보통';
 
   String get outfitImagePath {
+
+    if (weather == '눈') {
+      return 'assets/characters/dragon_outfit_snow.png';
+    }
+
+    if (weather == '비') {
+      return 'assets/characters/dragon_outfit_raincoat.png';
+    }
+
     if (temperature >= 28) {
       return 'assets/characters/dragon_outfit_short_short.png';
     }
@@ -271,6 +280,16 @@ Widget _buildFeedbackChoice({
 
     return 'assets/characters/dragon_outfit_padding.png';
   }
+
+  String get backgroundImagePath {
+    final int hour = DateTime.now().hour;
+
+    if (hour >= 6 && hour < 18) {
+      return 'assets/backgrounds/bg_day.png';
+    }
+
+    return 'assets/backgrounds/bg_night.png';
+  }
   String get outfitMessage {
     if (widget.coldLevel == '잘탐') {
       return '긴팔과 긴바지에 가디건을 챙기면 좋아요.';
@@ -289,41 +308,40 @@ Widget _buildFeedbackChoice({
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF8F5FF),
-              Color(0xFFFFFFFF),
-            ],
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(backgroundImagePath),
+            fit: BoxFit.cover,
           ),
         ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 28),
+        child: Container(
+          color: Colors.white.withOpacity(0.18),
+          child: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 420),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 28),
 
-                    _buildHeader(),
+                      _buildHeader(),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    _buildWeatherCard(),
+                      _buildWeatherCard(),
 
-                    const SizedBox(height: 22),
+                      const SizedBox(height: 22),
 
-                    Expanded(
-                      child: _buildCharacterArea(),
-                    ),
+                      Expanded(
+                        child: _buildCharacterArea(),
+                      ),
 
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -375,13 +393,13 @@ Widget _buildFeedbackChoice({
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withOpacity(0.82),
             borderRadius: BorderRadius.circular(17),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                color: sungshinViolet.withOpacity(0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
@@ -416,7 +434,7 @@ Widget _buildWeatherCard() {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.6),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -470,32 +488,14 @@ Widget _buildWeatherCard() {
 }
 
   Widget _buildCharacterArea() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF6E8),
-        borderRadius: BorderRadius.circular(34),
-      ),
+    return SizedBox(
+      height: 560,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
-            bottom: 0,
-            left: -24,
-            right: -24,
-            child: Container(
-              height: 90,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD5EACF),
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
-          ),
-
           if (showBubble)
             Positioned(
-              top: 8,
+              top: 20,
               child: Container(
                 width: 260,
                 padding: const EdgeInsets.symmetric(
@@ -503,7 +503,7 @@ Widget _buildWeatherCard() {
                   vertical: 14,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withOpacity(0.88),
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
@@ -527,20 +527,20 @@ Widget _buildWeatherCard() {
             ),
 
           Positioned(
-            bottom: 43,
+            bottom: 70,
             child: SizedBox(
-              width: 400,
-              height: 400,
+              width: 330,
+              height: 330,
               child: Image.asset(
-                    outfitImagePath,
-                    fit: BoxFit.contain,
+                outfitImagePath,
+                fit: BoxFit.contain,
               ),
             ),
           ),
 
           Positioned(
-            right: 18,
-            bottom: 26,
+            right: 28,
+            bottom: 72,
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -551,7 +551,7 @@ Widget _buildWeatherCard() {
                 width: 74,
                 height: 74,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withOpacity(0.9),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
