@@ -15,9 +15,9 @@ class WeartherApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Pretendard',
+        fontFamily: 'LINESeedKR',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5F8D72),
+          seedColor: const Color(0xFF582F82),
         ),
         scaffoldBackgroundColor: const Color(0xFFFFF8EC),
       ),

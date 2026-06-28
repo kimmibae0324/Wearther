@@ -75,16 +75,17 @@ void _showWeeklyFeedbackDialog() {
                     ),
                   ),
 
-                  const SizedBox(height: 22),
+                  //팝업창 수룡이
+                  const SizedBox(height: 18),
 
                   SizedBox(
-                    width: 180,
-                    height: 180,
+                    width: 150,
+                    height: 150,
                     child: Image.asset(
-                        outfitImagePath,
-                        fit: BoxFit.contain,
-                      )
+                      'assets/characters/dragon_face_wink.png',
+                      fit: BoxFit.contain,
                     ),
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -281,6 +282,7 @@ Widget _buildFeedbackChoice({
     return 'assets/characters/dragon_outfit_padding.png';
   }
 
+
   String get backgroundImagePath {
     final int hour = DateTime.now().hour;
 
@@ -290,6 +292,12 @@ Widget _buildFeedbackChoice({
 
     return 'assets/backgrounds/bg_night.png';
   }
+  
+  bool get isNight {
+    final int hour = DateTime.now().hour;
+    return hour < 6 || hour >= 18;
+  }
+
   String get outfitMessage {
     if (widget.coldLevel == '잘탐') {
       return '긴팔과 긴바지에 가디건을 챙기면 좋아요.';
@@ -353,65 +361,79 @@ Widget _buildFeedbackChoice({
   }
 
   Widget _buildHeader() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Wearther',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-              color: sungshinViolet,
-              letterSpacing: -0.8,
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            '기준 위치의 날씨 정보',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: sungshinBrightViolet,
-            ),
-          ),
-        ],
-      ),
-
-      GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SettingsScreen(),
-            ),
-          );
-        },
-        child: Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.82),
-            borderRadius: BorderRadius.circular(17),
-            boxShadow: [
-              BoxShadow(
-                color: sungshinViolet.withOpacity(0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Wearther',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.8,
+                color: isNight ? Colors.white : sungshinViolet,
+                shadows: isNight
+                    ? [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
-            ],
-          ),
-          child: const Icon(
-            Icons.settings_rounded,
-            color: sungshinViolet,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '기준 위치의 날씨 정보',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isNight
+                    ? Colors.white.withOpacity(0.72)
+                    : sungshinBrightViolet.withOpacity(0.78),
+              ),
+            ),
+          ],
+        ),
+
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+          child: Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: isNight
+                  ? Colors.white.withOpacity(0.92)
+                  : Colors.white.withOpacity(0.86),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isNight ? 0.18 : 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.settings_rounded,
+              color: sungshinViolet,
+              size: 30,
+            ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
 Widget _buildWeatherCard() {
   return GestureDetector(
@@ -434,7 +456,7 @@ Widget _buildWeatherCard() {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
+        color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -493,7 +515,7 @@ Widget _buildWeatherCard() {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 수룡 캐릭터
+          // 본문 수룡이 캐릭터
           Positioned(
             bottom: 60,
             child: SizedBox(
@@ -509,8 +531,8 @@ Widget _buildWeatherCard() {
           // 수정구에서 나오는 마법 말풍선
           if (showBubble)
             Positioned(
-              right: 72,
-              bottom: 168,
+              right: 46,
+              bottom: 285,
               child: _buildMagicBubble(),
             ),
 
@@ -527,6 +549,7 @@ Widget _buildWeatherCard() {
               child: SizedBox(
                 width: 112,
                 height: 112,
+                //수정구
                 child: Image.asset(
                   'assets/objects/crystal_ball.png',
                   fit: BoxFit.contain,
@@ -598,7 +621,7 @@ Widget _buildWeatherCard() {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.68),
+                color: Colors.white.withOpacity(0.78),
                 shape: BoxShape.circle,
               ),
             ),
@@ -607,7 +630,7 @@ Widget _buildWeatherCard() {
               width: 9,
               height: 9,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withOpacity(0.78),
                 shape: BoxShape.circle,
               ),
             ),
