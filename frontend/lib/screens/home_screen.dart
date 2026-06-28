@@ -81,10 +81,10 @@ void _showWeeklyFeedbackDialog() {
                     width: 180,
                     height: 180,
                     child: Image.asset(
-                      'assets/characters/dragon_base.png',
-                      fit: BoxFit.contain,
+                        outfitImagePath,
+                        fit: BoxFit.contain,
+                      )
                     ),
-                  ),
 
                   const SizedBox(height: 24),
 
@@ -244,9 +244,21 @@ Widget _buildFeedbackChoice({
 
   bool showBubble = false;
 
-  final int temperature = 18;
+  final int temperature = 30;
   final String weather = '맑음';
   final String dust = '보통';
+
+  String get outfitImagePath {
+    if (temperature >= 28) {
+      return 'assets/characters/dragon_outfit_short_short.png';
+    }
+
+    if (temperature >= 20) {
+      return 'assets/characters/dragon_outfit_short_long.png';
+    }
+
+    return 'assets/characters/dragon_outfit_long_long.png';
+  }
 
   String get outfitMessage {
     if (widget.coldLevel == '잘탐') {
@@ -509,8 +521,8 @@ Widget _buildWeatherCard() {
               width: 400,
               height: 400,
               child: Image.asset(
-                'assets/characters/dragon_base.png',
-                fit: BoxFit.contain,
+                    outfitImagePath,
+                    fit: BoxFit.contain,
               ),
             ),
           ),
