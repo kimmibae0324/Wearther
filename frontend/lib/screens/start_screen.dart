@@ -53,8 +53,8 @@ Widget build(BuildContext context) {
 
               Image.asset(
                 'assets/characters/dragon_base.png',
-                width: 370,
-                height: 370,
+                width: 340,
+                height: 340,
                 fit: BoxFit.contain,
               ),
 
@@ -91,7 +91,7 @@ Widget build(BuildContext context) {
                 ),
               ),
 
-              const SizedBox(height: 38),
+              const SizedBox(height: 34),
             ],
           ),
         ),

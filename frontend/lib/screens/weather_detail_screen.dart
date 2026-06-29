@@ -22,13 +22,22 @@ class WeatherDetailScreen extends StatelessWidget {
   static const Color sungshinBrightViolet = Color(0xFF6B6EB3);
   static const Color softViolet = Color(0xFFF3EFFA);
   static const Color textDark = Color(0xFF2E2440);
+  static const Color borderViolet = Color(0xFFE2D9F0);
 
-  String getWeatherIcon(String value) {
-    if (value.contains('비')) return '☔';
-    if (value.contains('눈')) return '❄️';
-    if (value.contains('구름')) return '☁️';
-    if (value.contains('흐림')) return '☁️';
-    return '☀️';
+  IconData getWeatherIcon(String value) {
+    if (value.contains('비')) return Icons.umbrella_rounded;
+    if (value.contains('눈')) return Icons.ac_unit_rounded;
+    if (value.contains('구름')) return Icons.cloud_rounded;
+    if (value.contains('흐림')) return Icons.cloud_rounded;
+    return Icons.wb_sunny_rounded;
+  }
+
+  Color getWeatherIconColor(String value) {
+    if (value.contains('비')) return const Color(0xFF6B8DD6);
+    if (value.contains('눈')) return const Color(0xFF8DBBE8);
+    if (value.contains('구름')) return const Color(0xFFB8C5D0);
+    if (value.contains('흐림')) return const Color(0xFFB8C5D0);
+    return const Color(0xFFF2B943);
   }
 
   String getPersonalMessage() {
@@ -54,8 +63,8 @@ class WeatherDetailScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF8F5FF),
-              Color(0xFFFFFFFF),
+              Color(0xFFF7F2FF),
+              Color(0xFFFFFBF4),
             ],
           ),
         ),
@@ -69,54 +78,48 @@ class WeatherDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 26),
 
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: sungshinViolet,
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 30,
+                          color: sungshinViolet,
+                        ),
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 38),
 
                       const Text(
                         '날씨 상세 정보',
                         style: TextStyle(
                           fontSize: 30,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.8,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -1,
                           color: textDark,
                         ),
                       ),
 
-                      const SizedBox(height: 8),
-
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
                       _buildMainWeatherCard(),
 
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 18),
 
                       _buildInfoGrid(),
 
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 28),
 
                       _buildHourlySection(),
 
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 28),
 
                       _buildWeeklySection(),
 
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 28),
 
                       _buildPersonalCard(),
 
@@ -135,9 +138,9 @@ class WeatherDetailScreen extends StatelessWidget {
   Widget _buildMainWeatherCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.94),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
@@ -149,21 +152,30 @@ class WeatherDetailScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            getWeatherIcon(weather),
-            style: const TextStyle(fontSize: 58),
+          SizedBox(
+            width: 74,
+            height: 74,
+            child: Center(
+              child: Icon(
+                getWeatherIcon(weather),
+                size: 54,
+                color: getWeatherIconColor(weather),
+              ),
+            ),
           ),
+
           const SizedBox(width: 20),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '$temperature°C',
                 style: const TextStyle(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w700,
                   color: textDark,
-                  letterSpacing: -1,
+                  letterSpacing: -1.2,
                 ),
               ),
               const SizedBox(height: 2),
@@ -171,7 +183,7 @@ class WeatherDetailScreen extends StatelessWidget {
                 weather,
                 style: const TextStyle(
                   fontSize: 17,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: sungshinBrightViolet,
                 ),
               ),
@@ -221,11 +233,19 @@ class WeatherDetailScreen extends StatelessWidget {
       height: 104,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFE2D9F0),
+          color: borderViolet,
+          width: 1.3,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,11 +269,23 @@ class WeatherDetailScreen extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               color: textDark,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.6,
+        color: textDark,
       ),
     );
   }
@@ -269,33 +301,39 @@ class WeatherDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '시간대별 예보',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: textDark,
-          ),
-        ),
+        _buildSectionTitle('시간대별 예보'),
         const SizedBox(height: 14),
+
         SizedBox(
-          height: 128,
+          height: 124,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: hourly.length,
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = hourly[index];
+              final String sky = item['sky'].toString();
 
               return Container(
-                width: 92,
-                padding: const EdgeInsets.all(14),
+                width: 86,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withOpacity(0.92),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: const Color(0xFFE2D9F0),
+                    color: borderViolet,
+                    width: 1.3,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: sungshinViolet.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -303,21 +341,22 @@ class WeatherDetailScreen extends StatelessWidget {
                       item['time'].toString(),
                       style: const TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: sungshinBrightViolet,
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      getWeatherIcon(item['sky'].toString()),
-                      style: const TextStyle(fontSize: 28),
+                    Icon(
+                      getWeatherIcon(sky),
+                      size: 28,
+                      color: getWeatherIconColor(sky),
                     ),
                     const Spacer(),
                     Text(
                       '${item['temp']}°C',
                       style: const TextStyle(
                         fontSize: 17,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                         color: textDark,
                       ),
                     ),
@@ -342,62 +381,71 @@ class WeatherDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '주간 예보',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: textDark,
-          ),
-        ),
+        _buildSectionTitle('주간 예보'),
         const SizedBox(height: 14),
+
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(26),
+            color: Colors.white.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: const Color(0xFFE2D9F0),
+              color: borderViolet,
+              width: 1.3,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: sungshinViolet.withOpacity(0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             children: weekly.map((item) {
+              final String sky = item['sky'].toString();
+
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 52,
+                      width: 50,
                       child: Text(
                         item['day'].toString(),
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: textDark,
                         ),
                       ),
                     ),
-                    Text(
-                      getWeatherIcon(item['sky'].toString()),
-                      style: const TextStyle(fontSize: 24),
+
+                    Icon(
+                      getWeatherIcon(sky),
+                      size: 26,
+                      color: getWeatherIconColor(sky),
                     ),
+
                     const SizedBox(width: 14),
+
                     Expanded(
                       child: Text(
-                        item['sky'].toString(),
+                        sky,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: sungshinBrightViolet,
                         ),
                       ),
                     ),
+
                     Text(
                       '${item['min']}° / ${item['max']}°',
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: textDark,
                       ),
                     ),
@@ -416,37 +464,70 @@ class WeatherDetailScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: softViolet,
-        borderRadius: BorderRadius.circular(26),
+        color: softViolet.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '사용자 맞춤 체감 설명',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-              color: sungshinViolet,
-            ),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 34,
+                  height: 34,
+                  child: Image.asset(
+                    'assets/characters/dragon_face_wink.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                '사용자 맞춤 체감 설명',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: sungshinViolet,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+
           Text(
             getPersonalMessage(),
             style: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 1.55,
               color: textDark,
             ),
           ),
+
           const SizedBox(height: 16),
-          Text(
-            '나이대 $age · 추위 $coldLevel · 더위 $heatLevel',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: sungshinBrightViolet,
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.65),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '나이대 $age · 추위 $coldLevel · 더위 $heatLevel',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: sungshinBrightViolet,
+              ),
             ),
           ),
         ],
