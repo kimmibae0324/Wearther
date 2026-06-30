@@ -247,7 +247,7 @@ Widget _buildFeedbackChoice({
 
   final int temperature = 4;
   final String weather = '맑음';
-  final String dust = '보통';
+  final String dust = '나쁨';
 
   String get outfitImagePath {
 
@@ -282,6 +282,37 @@ Widget _buildFeedbackChoice({
     return 'assets/characters/dragon_outfit_padding.png';
   }
 
+  String get crystalImagePath {
+  if (dust.contains('매우')) {
+    return 'assets/objects/crystal_very_bad.png';
+  }
+
+  if (dust.contains('나쁨')) {
+    return 'assets/objects/crystal_bad.png';
+  }
+
+  if (dust.contains('좋음')) {
+    return 'assets/objects/crystal_good.png';
+  }
+
+  return 'assets/objects/crystal_normal.png';
+}
+
+String get dustMessage {
+  if (dust.contains('매우')) {
+    return '공기가 많이 탁해요. 외출을 조심해요.';
+  }
+
+  if (dust.contains('나쁨')) {
+    return '공기가 탁해요. 마스크를 챙겨요.';
+  }
+
+  if (dust.contains('좋음')) {
+    return '공기가 깨끗해요.';
+  }
+
+  return '공기는 보통이에요.';
+}
 
   String get backgroundImagePath {
     final int hour = DateTime.now().hour;
@@ -297,19 +328,38 @@ Widget _buildFeedbackChoice({
     final int hour = DateTime.now().hour;
     return hour < 6 || hour >= 18;
   }
-
-  String get outfitMessage {
-    if (widget.coldLevel == '잘탐') {
-      return '긴팔과 긴바지에 가디건을 챙기면 좋아요.';
-    }
-
-    if (widget.heatLevel == '잘탐') {
-      return '얇은 긴팔이나 반팔에 긴바지를 추천해요.';
-    }
-
-    return '긴팔과 긴바지를 추천해요.';
+  
+String get outfitMessage {
+  if (weather == '눈') {
+    return '눈 오는 날엔 따뜻하게 입어요.\n$dustMessage';
   }
 
+  if (weather == '비') {
+    return '비가 와요. 우비를 챙겨요.\n$dustMessage';
+  }
+
+  if (temperature >= 28) {
+    return '반팔과 반바지를 추천해요.\n$dustMessage';
+  }
+
+  if (temperature >= 20) {
+    return '반팔과 긴바지를 추천해요.\n$dustMessage';
+  }
+
+  if (temperature >= 16) {
+    return '긴팔과 긴바지를 추천해요.\n$dustMessage';
+  }
+
+  if (temperature >= 12) {
+    return '가디건을 함께 입으면 좋아요.\n$dustMessage';
+  }
+
+  if (temperature >= 8) {
+    return '집업을 챙기면 든든해요.\n$dustMessage';
+  }
+
+  return '패딩으로 따뜻하게 입어요.\n$dustMessage';
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -551,7 +601,7 @@ Widget _buildWeatherCard() {
                 height: 112,
                 //수정구
                 child: Image.asset(
-                  'assets/objects/crystal_ball.png',
+                  crystalImagePath,
                   fit: BoxFit.contain,
                 ),
               ),
