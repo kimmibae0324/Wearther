@@ -4,7 +4,7 @@ from database import Base
 
 class User(Base):
     # 실제 MySQL 데이터베이스에 만들어둔 테이블 이름과 대소문자까지 똑같이 적어줍니다.
-    __tablename__ = "USER" #사용자정보저장?
+    __tablename__ = "USER" 
 
     user_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50))
