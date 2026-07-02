@@ -26,7 +26,7 @@ def auto_fetch_and_save_weather():
     
     # 1. 기상청 초단기'실황'(현재 날씨) API 주소
     ncst_url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst'
-    fcst_url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst'
+    fcst_url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst' # 날씨 정보 불러오는 거 때문에 필요
     api_key = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b' # 👈 본인 API 키 입력!
     
     # 에러가 안 나게 가장 안전한 1시간 전 정시(00분) 기준으로 찌르기
@@ -80,12 +80,12 @@ def auto_fetch_and_save_weather():
         # 2. 내 MySQL 금고(WEATHER_LOG)에 새 줄(INSERT)로 영구 보관!
         connection = pymysql.connect(
             host='localhost', user='root', 
-            password='password', # 👈 본인 MySQL 비밀번호!
+            password='root', # 👈 본인 MySQL 비밀번호!
             db='weather_app_db', charset='utf8mb4'
         )
         with connection.cursor() as cursor:
             sql = """
-            INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state) 
+            INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state) #날씨정보 추가
             VALUES (%s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (1, temp, humidity, sky, state)) # 임시로 1번 유저로 저장
@@ -125,7 +125,7 @@ def get_weather_info():
     connection = pymysql.connect(
         host='localhost',
         user='root', 
-        password='password', # 👈 본인 MySQL 비밀번호!
+        password='root', # 👈 본인 MySQL 비밀번호!
         db='weather_app_db', 
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
