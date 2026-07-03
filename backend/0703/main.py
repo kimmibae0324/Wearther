@@ -35,6 +35,20 @@ class LocationRequest(BaseModel):
     #latitude: float
     #longitude: float
 
+# 회원 등록을 위함
+class UserCreate(BaseModel):
+    age_group: str
+    cold_sensitivity: int
+    heat_sensitivity: int
+
+# 기존 회원 정보 수정할 때 사용
+class UserUpdate(BaseModel):
+    user_id: int
+    age_group: str
+    cold_sensitivity: int
+    heat_sensitivity: int
+
+
 # --- 2. DB 세션 의존성 주입 함수 ---
 # 요청이 올 때마다 DB 세션을 열고, 끝나면 닫아주는 안전한 구조입니다.
 def get_db():
@@ -68,7 +82,7 @@ def recommend_outfit(temp):
 API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
 FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
 NX = 60
-NY = 127 #서울시 중구 청구동 기준으로 설정함
+NY = 127 #서울시 중구 청구동 기준으로 설정
 
 SKY_MAP = {
     "1": "맑음",
@@ -131,6 +145,53 @@ def get_future_forecast():
         print(e)
 
     return future_forecast
+
+# 사용자 등록
+@app.post("/user/register")
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+
+    new_user = models.User(
+        age_group=user.age_group,
+        cold_sensitivity=user.cold_sensitivity,
+        heat_sensitivity=user.heat_sensitivity
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "status": "success",
+        "user_id": new_user.user_id
+    }
+
+
+# 사용자 정보 업데이트
+@app.post("/user/update")
+def update_user(user: UserUpdate, db: Session = Depends(get_db)):
+
+    target = (
+        db.query(models.User)
+        .filter(models.User.user_id == user.user_id)
+        .first()
+    )
+
+    if target is None:
+        return {
+            "status": "error",
+            "message": "사용자를 찾을 수 없습니다."
+        }
+
+    target.age_group = user.age_group
+    target.cold_sensitivity = user.cold_sensitivity
+    target.heat_sensitivity = user.heat_sensitivity
+
+    db.commit()
+
+    return {
+        "status": "success"
+    }
+
 
 
 # --- 3. 핵심 API 엔드포인트 ---
