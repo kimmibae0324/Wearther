@@ -4,7 +4,7 @@ USE weather_app_db;
 -- 사용자 정보
 CREATE TABLE USER (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
-    age_group INT NOT NULL,
+    age_group VARCHAR(20),
     cold_sensitivity TINYINT NOT NULL,
     heat_sensitivity TINYINT NOT NULL
 );
