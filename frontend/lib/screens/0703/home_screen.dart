@@ -9,11 +9,13 @@ import 'package:http/http.dart' as http;
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
+    required this.userId,
     required this.age,
     required this.coldLevel,
     required this.heatLevel,
   });
 
+  final int userId;
   final String age;
   final String coldLevel;
   final String heatLevel;
@@ -48,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Uri.parse('http://127.0.0.1:8001/weather/custom-info'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'user_id': 1,
+          'user_id': widget.userId,
           //'latitude': 37.5665,
           //'longitude': 126.9780, 위치정보 지정해둠(나중에 실시간 위치 도입)
         }),
