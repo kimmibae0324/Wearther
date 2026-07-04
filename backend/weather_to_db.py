@@ -1,5 +1,6 @@
 import requests
 import pymysql
+from datetime import datetime, timedelta
 
 # ==========================================
 # 1. 기상청에서 날씨 데이터 가져오기 (API)
@@ -7,42 +8,59 @@ import pymysql
 url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst'
 api_key = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
 
+now = datetime.now()
+
+# 기상청 초단기실황은 매시 40분 이후부터 안정적으로 조회되므로
+# 45분 전이면 한 시간 전 자료를 요청
+if now.minute < 45:
+    base = now - timedelta(hours=1)
+else:
+    base = now
+
+base_date = base.strftime("%Y%m%d")
+base_time = base.strftime("%H00")
+
 params = {
     'serviceKey': api_key,
     'pageNo': '1',
     'numOfRows': '1000',
     'dataType': 'JSON',
-    'base_date': '20260619', 
-    'base_time': '2100',      
-    'nx': '60',               
-    'ny': '127'               
+    'base_date': base_date,
+    'base_time': base_time,
+    'nx': '60',
+    'ny': '127'
 }
 
-print("1. 기상청에 날씨 데이터를 요청합니다...")
+print(f"1. 기상청에 날씨 데이터를 요청합니다... 기준 시간: {base_date} {base_time}")
+
 response = requests.get(url, params=params)
 
 if response.status_code == 200:
     data = response.json()
-    items = data['response']['body']['items']['item']
-    
-    # 변수 초기화
+
+    try:
+        items = data['response']['body']['items']['item']
+    except KeyError:
+        print("❌ 기상청 응답 구조가 예상과 다릅니다.")
+        print(data)
+        raise
+
     current_temp = 0.0
     current_humidity = 0
-    
-    # 기온과 습도 추출
+
     for item in items:
         if item['category'] == 'T1H':
             current_temp = float(item['obsrValue'])
         elif item['category'] == 'REH':
             current_humidity = int(item['obsrValue'])
-            
+
     print(f"   -> 현재 기온: {current_temp}°C, 습도: {current_humidity}%")
 
     # ==========================================
-    # 2. 날씨에 따른 '캐릭터 상태' 로직 계산
+    # 2. 날씨에 따른 캐릭터 상태 계산
     # ==========================================
-    character_state = "보통_무표정" # 기본값
-    
+    character_state = "보통_무표정"
+
     if current_temp >= 28:
         character_state = "더움_땀뻘뻘"
     elif current_temp <= 10:
@@ -51,39 +69,53 @@ if response.status_code == 200:
         character_state = "습함_불쾌"
     else:
         character_state = "쾌적_스마일"
-        
+
     print(f"   -> 결정된 캐릭터 상태: {character_state}")
 
     # ==========================================
-    # 3. 계산된 데이터를 내 MySQL 금고에 저장하기
+    # 3. MySQL 데이터베이스에 저장
     # ==========================================
     print("\n2. MySQL 데이터베이스에 기록을 시작합니다...")
-    
+
     connection = pymysql.connect(
         host='localhost',
-        user='root',
-        password='root', 
+        user='wearther_user',
+        password='wearther1234',
         db='weather_app_db',
         charset='utf8mb4'
     )
-    
+
     try:
         with connection.cursor() as cursor:
-            # 1번 유저(아까 우리가 가입시킨 테스트 유저)의 기록으로 저장합니다.
             sql = """
-            INSERT INTO WEATHER_LOG (user_id, temperature, humidity, character_state) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO WEATHER_LOG 
+            (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            # 추출한 온도, 습도, 캐릭터 상태를 쿼리에 밀어넣기
-            cursor.execute(sql, (1, current_temp, current_humidity, character_state))
-            
+
+            cursor.execute(
+                sql,
+                (
+                    1,
+                    current_temp,
+                    current_humidity,
+                    "맑음",
+                    character_state,
+                    0,
+                    "보통"
+                )
+            )
+
         connection.commit()
-        print("✅ 완벽합니다! 날씨 데이터와 캐릭터 상태가 DB에 성공적으로 저장되었습니다.")
-        
+        print("✅ 날씨 데이터가 DB에 성공적으로 저장되었습니다.")
+
     except Exception as e:
         print(f"❌ DB 저장 중 에러 발생: {e}")
+
     finally:
         connection.close()
 
 else:
     print("❌ 기상청 API 호출에 실패했습니다.")
+    print(response.status_code)
+    print(response.text)
