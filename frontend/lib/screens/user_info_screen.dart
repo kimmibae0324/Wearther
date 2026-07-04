@@ -18,48 +18,81 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   static const Color sungshinBrightViolet = Color(0xFF6B6EB3);
   static const Color textDark = Color(0xFF2E2440);
 
-  String selectedAge = '10대';
-  String? coldLevel;
-  String? heatLevel;
+  final TextEditingController nicknameController = TextEditingController();
+
+  String selectedAge = '20대';
+  int coldSensitivity = 50;
+  int heatSensitivity = 50;
+
+  final List<String> ageOptions = ['10대', '20대', '30대', '40대', '50대 이상'];
+  final List<int> sensitivityOptions = [0, 25, 50, 75, 100];
+
   @override
   void initState() {
     super.initState();
+    nicknameController.addListener(() {
+      setState(() {});
+    });
 
     if (widget.isUpdate) {
       loadUserInfo();
     }
   }
 
+  @override
+  void dispose() {
+    nicknameController.dispose();
+    super.dispose();
+  }
+
   Future<void> loadUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
+      nicknameController.text = prefs.getString("nickname") ?? "";
       selectedAge = prefs.getString("age") ?? "20대";
 
-      coldLevel = prefs.getString("coldLevel");
+      coldSensitivity =
+          prefs.getInt("coldSensitivity") ??
+          _valueFromOldLevel(prefs.getString("coldLevel"));
 
-      heatLevel = prefs.getString("heatLevel");
+      heatSensitivity =
+          prefs.getInt("heatSensitivity") ??
+          _valueFromOldLevel(prefs.getString("heatLevel"));
     });
   }
 
-  final List<String> ageOptions = ['10대', '20대', '30대', '40대', '50대 이상'];
-
-  final List<String> levelOptions = ['안탐', '보통', '잘탐'];
-
   bool get isReady {
-    return coldLevel != null && heatLevel != null;
+    return nicknameController.text.trim().isNotEmpty;
   }
 
-  int convertLevel(String level) {
+  int _valueFromOldLevel(String? level) {
     switch (level) {
       case '잘탐':
-        return 1;
+        return 75;
       case '보통':
-        return 0;
+        return 50;
       case '안탐':
-        return -1;
+        return 25;
       default:
-        return 0;
+        return 50;
+    }
+  }
+
+  String _sensitivityLabel(int value) {
+    switch (value) {
+      case 0:
+        return '전혀 안 타요';
+      case 25:
+        return '조금 안 타요';
+      case 50:
+        return '보통이에요';
+      case 75:
+        return '조금 잘 타요';
+      case 100:
+        return '많이 타요';
+      default:
+        return '보통이에요';
     }
   }
 
@@ -69,8 +102,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "age_group": selectedAge,
-        "cold_sensitivity": convertLevel(coldLevel!),
-        "heat_sensitivity": convertLevel(heatLevel!),
+        "cold_sensitivity": coldSensitivity,
+        "heat_sensitivity": heatSensitivity,
       }),
     );
 
@@ -86,10 +119,24 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       body: jsonEncode({
         "user_id": userId,
         "age_group": selectedAge,
-        "cold_sensitivity": convertLevel(coldLevel!),
-        "heat_sensitivity": convertLevel(heatLevel!),
+        "cold_sensitivity": coldSensitivity,
+        "heat_sensitivity": heatSensitivity,
       }),
     );
+  }
+
+  Future<void> saveLocalUserInfo(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setInt("user_id", userId);
+    await prefs.setString("nickname", nicknameController.text.trim());
+    await prefs.setString("age", selectedAge);
+
+    await prefs.setInt("coldSensitivity", coldSensitivity);
+    await prefs.setInt("heatSensitivity", heatSensitivity);
+
+    await prefs.setString("coldLevel", _sensitivityLabel(coldSensitivity));
+    await prefs.setString("heatLevel", _sensitivityLabel(heatSensitivity));
   }
 
   @override
@@ -108,144 +155,158 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 28),
-
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 30,
-                    color: sungshinViolet,
-                  ),
+            child: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom,
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 28),
 
-                const SizedBox(height: 46),
-
-                RichText(
-                  text: const TextSpan(
-                    style: TextStyle(
-                      fontSize: 29,
-                      height: 1.38,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -1.1,
-                      color: textDark,
-                    ),
-                    children: [
-                      TextSpan(text: '나에게 맞는 '),
-                      TextSpan(
-                        text: '추천',
-                        style: TextStyle(color: sungshinViolet),
-                      ),
-                      TextSpan(text: '을 위해\n'),
-                      TextSpan(
-                        text: '기본 정보',
-                        style: TextStyle(color: sungshinViolet),
-                      ),
-                      TextSpan(text: '를 알려주세요'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 44),
-
-                _buildSectionTitle('나이대'),
-                const SizedBox(height: 12),
-                _buildAgeDropdown(),
-
-                const SizedBox(height: 34),
-
-                _buildSectionTitle('추위를 많이 타나요?'),
-                const SizedBox(height: 14),
-                _buildLevelButtons(
-                  selectedValue: coldLevel,
-                  onSelected: (value) {
-                    setState(() {
-                      coldLevel = value;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: 34),
-
-                _buildSectionTitle('더위를 많이 타나요?'),
-                const SizedBox(height: 14),
-                _buildLevelButtons(
-                  selectedValue: heatLevel,
-                  onSelected: (value) {
-                    setState(() {
-                      heatLevel = value;
-                    });
-                  },
-                ),
-
-                const Spacer(),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 64,
-                  child: ElevatedButton(
-                    onPressed: isReady
-                        ? () async {
-                            final prefs = await SharedPreferences.getInstance();
-
-                            int? userId = prefs.getInt("user_id");
-
-                            if (widget.isUpdate) {
-                              // 설정 화면에서 들어온 경우
-                              await updateUser(userId!);
-                            } else {
-                              // 첫 실행
-                              userId = await registerUser();
-                              await prefs.setInt("user_id", userId);
-                            }
-
-                            //항상 최신정보 저장
-                            await prefs.setString("age", selectedAge);
-                            await prefs.setString("coldLevel", coldLevel!);
-                            await prefs.setString("heatLevel", heatLevel!);
-
-                            if (!mounted) return;
-
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomeScreen(
-                                  userId: userId!,
-                                  age: selectedAge,
-                                  coldLevel: coldLevel!,
-                                  heatLevel: heatLevel!,
-                                ),
-                              ),
-                            );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: sungshinViolet,
-                      disabledBackgroundColor: const Color(0xFFE1DEE7),
-                      foregroundColor: Colors.white,
-                      disabledForegroundColor: Colors.grey,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 30,
+                        color: sungshinViolet,
                       ),
                     ),
-                    child: const Text(
-                      '다음',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
+
+                    const SizedBox(height: 38),
+
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 29,
+                          height: 1.38,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -1.1,
+                          color: textDark,
+                        ),
+                        children: [
+                          TextSpan(text: '나에게 맞는 '),
+                          TextSpan(
+                            text: '추천',
+                            style: TextStyle(color: sungshinViolet),
+                          ),
+                          TextSpan(text: '을 위해\n'),
+                          TextSpan(
+                            text: '기본 정보',
+                            style: TextStyle(color: sungshinViolet),
+                          ),
+                          TextSpan(text: '를 알려주세요'),
+                        ],
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 34),
-              ],
+                    const SizedBox(height: 34),
+
+                    _buildSectionTitle('별명'),
+                    const SizedBox(height: 12),
+                    _buildNicknameField(),
+
+                    const SizedBox(height: 28),
+
+                    _buildSectionTitle('나이대'),
+                    const SizedBox(height: 12),
+                    _buildAgeDropdown(),
+
+                    const SizedBox(height: 30),
+
+                    _buildSectionTitle('추위를 얼마나 타나요?'),
+                    const SizedBox(height: 10),
+                    _buildSensitivitySlider(
+                      value: coldSensitivity,
+                      onChanged: (value) {
+                        setState(() {
+                          coldSensitivity = value;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    _buildSectionTitle('더위를 얼마나 타나요?'),
+                    const SizedBox(height: 10),
+                    _buildSensitivitySlider(
+                      value: heatSensitivity,
+                      onChanged: (value) {
+                        setState(() {
+                          heatSensitivity = value;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 34),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 64,
+                      child: ElevatedButton(
+                        onPressed: isReady
+                            ? () async {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+
+                                int? userId = prefs.getInt("user_id");
+
+                                if (widget.isUpdate) {
+                                  await updateUser(userId!);
+                                } else {
+                                  userId = await registerUser();
+                                }
+
+                                await saveLocalUserInfo(userId!);
+
+                                if (!mounted) return;
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HomeScreen(
+                                      userId: userId!,
+                                      age: selectedAge,
+                                      coldLevel:
+                                          _sensitivityLabel(coldSensitivity),
+                                      heatLevel:
+                                          _sensitivityLabel(heatSensitivity),
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: sungshinViolet,
+                          disabledBackgroundColor: const Color(0xFFE1DEE7),
+                          foregroundColor: Colors.white,
+                          disabledForegroundColor: Colors.grey,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          '다음',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 34),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -261,6 +322,43 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
         color: textDark,
+      ),
+    );
+  }
+
+  Widget _buildNicknameField() {
+    return Container(
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: sungshinViolet.withOpacity(0.18), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: nicknameController,
+        cursorColor: sungshinViolet,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          hintText: '별명을 입력해주세요',
+          hintStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFFB7AEC6),
+          ),
+        ),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: sungshinBrightViolet,
+        ),
       ),
     );
   }
@@ -310,56 +408,78 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     );
   }
 
-  Widget _buildLevelButtons({
-    required String? selectedValue,
-    required void Function(String value) onSelected,
+  Widget _buildSensitivitySlider({
+    required int value,
+    required void Function(int value) onChanged,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(levelOptions.length, (index) {
-        final String option = levelOptions[index];
-        final bool isSelected = selectedValue == option;
-
-        return GestureDetector(
-          onTap: () {
-            onSelected(option);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: 108,
-            height: 54,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? sungshinViolet
-                  : Colors.white.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? sungshinViolet
-                    : sungshinViolet.withOpacity(0.18),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: sungshinViolet.withOpacity(isSelected ? 0.18 : 0.05),
-                  blurRadius: isSelected ? 14 : 10,
-                  offset: const Offset(0, 7),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                option,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : sungshinBrightViolet,
-                ),
-              ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: sungshinViolet.withOpacity(0.18), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            _sensitivityLabel(value),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: sungshinBrightViolet,
             ),
           ),
-        );
-      }),
+
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: sungshinViolet,
+              inactiveTrackColor: const Color(0xFFE7E1EF),
+              thumbColor: sungshinViolet,
+              overlayColor: sungshinViolet.withOpacity(0.12),
+              valueIndicatorColor: sungshinViolet,
+              valueIndicatorTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            child: Slider(
+              value: value.toDouble(),
+              min: 0,
+              max: 100,
+              divisions: 4,
+              label: value.toString(),
+              onChanged: (newValue) {
+                onChanged(newValue.round());
+              },
+            ),
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: sensitivityOptions.map((option) {
+              final bool isSelected = option == value;
+
+              return Text(
+                option.toString(),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected
+                      ? sungshinViolet
+                      : sungshinViolet.withOpacity(0.38),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

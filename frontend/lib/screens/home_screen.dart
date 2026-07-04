@@ -354,16 +354,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 사용자 맞춤 옷차림
+// 사용자 맞춤 수룡이 이미지
   String get outfitImagePath {
-    if (weather == '눈') {
+    // 1순위: 눈
+    if (weather == '눈' || recommendedOutfit == 'snow') {
       return 'assets/characters/dragon_outfit_snow.png';
     }
 
-    if (weather == '비') {
+    // 2순위: 비
+    // 백엔드가 강수확률 90% 초과일 때 raincoat_umbrella로 보내주면 우비+우산 이미지 사용
+    if (recommendedOutfit == 'raincoat_umbrella') {
+      return 'assets/characters/dragon_outfit_raincoat_umbrella.png';
+    }
+
+    if (weather == '비' || recommendedOutfit == 'raincoat') {
       return 'assets/characters/dragon_outfit_raincoat.png';
     }
 
-    //백엔드가 추천한 의상
+    // 3순위: 체감온도 기반 옷차림
     switch (recommendedOutfit) {
       case 'short_short':
         return 'assets/characters/dragon_outfit_short_short.png';
@@ -374,11 +382,17 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'long_long':
         return 'assets/characters/dragon_outfit_long_long.png';
 
+      case 'cardigan_long':
       case 'cardigan':
         return 'assets/characters/dragon_outfit_cardigan.png';
 
+      case 'zipup_long':
       case 'zipup':
         return 'assets/characters/dragon_outfit_zipup.png';
+
+      case 'coat_long':
+      case 'coat':
+        return 'assets/characters/dragon_outfit_coat.png';
 
       case 'padding':
         return 'assets/characters/dragon_outfit_padding.png';
@@ -421,10 +435,44 @@ class _HomeScreenState extends State<HomeScreen> {
     return '공기는 보통이에요.';
   }
 
-  String get backgroundImagePath {
-    final int hour = DateTime.now().hour;
+  Map<String, int> get sunriseSunsetMinutes {
+    final int month = DateTime.now().month;
 
-    if (hour >= 6 && hour < 18) {
+    // 겨울: 11, 12, 1, 2월 → 07:30 / 17:40
+    if (month == 11 || month == 12 || month == 1 || month == 2) {
+      return {
+        'sunrise': 7 * 60 + 30,
+        'sunset': 17 * 60 + 40,
+      };
+    }
+
+    // 봄/가을: 3, 9, 10월 → 06:30 / 18:20
+    if (month == 3 || month == 9 || month == 10) {
+      return {
+        'sunrise': 6 * 60 + 30,
+        'sunset': 18 * 60 + 20,
+      };
+    }
+
+    // 여름: 4~8월 → 05:20 / 19:40
+    return {
+      'sunrise': 5 * 60 + 20,
+      'sunset': 19 * 60 + 40,
+    };
+  }
+
+  bool get isDaytime {
+    final DateTime now = DateTime.now();
+    final int currentMinutes = now.hour * 60 + now.minute;
+
+    final times = sunriseSunsetMinutes;
+
+    return currentMinutes >= times['sunrise']! &&
+        currentMinutes < times['sunset']!;
+  }
+
+  String get backgroundImagePath {
+    if (isDaytime) {
       return 'assets/backgrounds/bg_day.png';
     }
 
@@ -432,44 +480,51 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool get isNight {
-    final int hour = DateTime.now().hour;
-    return hour < 6 || hour >= 18;
+    return !isDaytime;
   }
 
-  String get outfitMessage {
-    if (weather == '눈') {
-      return '눈 오는 날엔 따뜻하게 입어요.\n$dustMessage';
-    }
-
-    if (weather == '비') {
-      return '비가 와요. 우비를 챙겨요.\n$dustMessage';
-    }
-
-    //백엔드가 추천한 의상
-    switch (recommendedOutfit) {
-      case "short_short":
-        return "반팔과 반바지를 추천해요.\n$dustMessage";
-
-      case "short_long":
-        return "반팔과 긴바지를 추천해요.\n$dustMessage";
-
-      case "long_long":
-        return "긴팔과 긴바지를 추천해요.\n$dustMessage";
-
-      case "cardigan":
-        return "가디건을 함께 입으면 좋아요.\n$dustMessage";
-
-      case "zipup":
-        return "집업을 챙기면 든든해요.\n$dustMessage";
-
-      case "padding":
-        return "패딩으로 따뜻하게 입어요.\n$dustMessage";
-
-      default:
-        return dustMessage;
-    }
+String get outfitMessage {
+  if (weather == '눈' || recommendedOutfit == 'snow') {
+    return '눈 오는 날엔 미끄럽지 않게,\n따뜻하게 입어요.\n$dustMessage';
   }
 
+  if (recommendedOutfit == 'raincoat_umbrella') {
+    return '비가 많이 올 수 있어요.\n우비와 우산을 함께 챙겨요.\n$dustMessage';
+  }
+
+  if (weather == '비' || recommendedOutfit == 'raincoat') {
+    return '비가 와요.\n우비를 챙기면 좋아요.\n$dustMessage';
+  }
+
+  switch (recommendedOutfit) {
+    case "short_short":
+      return "반팔과 반바지를 추천해요.\n$dustMessage";
+
+    case "short_long":
+      return "반팔과 긴바지를 추천해요.\n$dustMessage";
+
+    case "long_long":
+      return "긴팔과 긴바지를 추천해요.\n$dustMessage";
+
+    case "cardigan_long":
+    case "cardigan":
+      return "가디건과 긴바지를 추천해요.\n$dustMessage";
+
+    case "zipup_long":
+    case "zipup":
+      return "집업과 긴바지를 입으면 좋아요.\n$dustMessage";
+
+    case "coat_long":
+    case "coat":
+      return "코트와 긴바지로 따뜻하게 입어요.\n$dustMessage";
+
+    case "padding":
+      return "패딩으로 든든하게 입어요.\n$dustMessage";
+
+    default:
+      return "오늘 날씨에 맞는 옷차림을 확인해보세요.\n$dustMessage";
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -730,8 +785,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // 수정구에서 나오는 마법 말풍선
           if (showBubble)
-            Positioned(right: 46, bottom: 285, child: _buildMagicBubble()),
-
+            Positioned(right: 118, bottom: 92, child: _buildMagicBubble()),
           // 수정구 버튼
           Positioned(
             right: 18,
@@ -761,7 +815,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         // 말풍선 본체
         Container(
-          width: 230,
+          width: 205,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.9),
@@ -778,7 +832,7 @@ class _HomeScreenState extends State<HomeScreen> {
             outfitMessage,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
               height: 1.4,
               color: textDark,
@@ -786,48 +840,61 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // 수정구 쪽으로 이어지는 마법 연기
-        Positioned(
-          right: 22,
-          bottom: -46,
-          child: Column(
+      // 수정구 쪽으로 이어지는 마법 연기
+      Positioned(
+        right: -48,
+        bottom: 8,
+        child: SizedBox(
+          width: 64,
+          height: 56,
+          child: Stack(
             children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.82),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: sungshinBrightViolet.withOpacity(0.18),
-                      blurRadius: 12,
-                    ),
-                  ],
+              Positioned(
+                left: 0,
+                top: 2,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.82),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: sungshinBrightViolet.withOpacity(0.18),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.78),
-                  shape: BoxShape.circle,
+              Positioned(
+                left: 26,
+                top: 24,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.78),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.78),
-                  shape: BoxShape.circle,
+              Positioned(
+                left: 48,
+                top: 44,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.78),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-
+      ),
         // 작은 마법 반짝이
         Positioned(
           right: 12,
