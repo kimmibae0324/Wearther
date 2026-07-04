@@ -27,10 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF7F2FF),
-              Color(0xFFFFFBF4),
-            ],
+            colors: [Color(0xFFF7F2FF), Color(0xFFFFFBF4)],
           ),
         ),
         child: SafeArea(
@@ -116,9 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Row(
         children: [
-          _buildIconBox(
-            icon: Icons.notifications_active_rounded,
-          ),
+          _buildIconBox(icon: Icons.notifications_active_rounded),
 
           const SizedBox(width: 18),
 
@@ -171,10 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: borderViolet,
-          width: 1.4,
-        ),
+        border: Border.all(color: borderViolet, width: 1.4),
         boxShadow: [
           BoxShadow(
             color: sungshinViolet.withOpacity(0.05),
@@ -193,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const UserInfoScreen(),
+                  builder: (context) => const UserInfoScreen(isUpdate: true),
                 ),
               );
             },
@@ -227,9 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildIconBox({
-    required IconData icon,
-  }) {
+  Widget _buildIconBox({required IconData icon}) {
     return Container(
       width: 56,
       height: 56,
@@ -237,11 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Icon(
-        icon,
-        color: sungshinViolet,
-        size: 28,
-      ),
+      child: Icon(icon, color: sungshinViolet, size: 28),
     );
   }
 
@@ -265,11 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: softViolet.withOpacity(0.88),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(
-                icon,
-                color: sungshinViolet,
-                size: 26,
-              ),
+              child: Icon(icon, color: sungshinViolet, size: 26),
             ),
 
             const SizedBox(width: 16),
@@ -318,10 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showSimpleDialog({
-    required String title,
-    required String message,
-  }) {
+  void _showSimpleDialog({required String title, required String message}) {
     showDialog(
       context: context,
       builder: (context) {
@@ -400,176 +379,177 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
   void _showFeedbackDialog() {
-  final TextEditingController feedbackController = TextEditingController();
+    final TextEditingController feedbackController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (dialogContext) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  'assets/characters/dragon_face_wink.png',
-                  width: 82,
-                  fit: BoxFit.contain,
-                ),
-
-                const SizedBox(height: 12),
-
-                const Text(
-                  '피드백 보내기',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: textDark,
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/characters/dragon_face_wink.png',
+                    width: 82,
+                    fit: BoxFit.contain,
                   ),
-                ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                const Text(
-                  '추천이 어땠는지 자유롭게 알려주세요',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                    color: sungshinBrightViolet,
+                  const Text(
+                    '피드백 보내기',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: textDark,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 8),
 
-                TextField(
-                  controller: feedbackController,
-                  maxLines: 6,
-                  maxLength: 300,
-                  cursorColor: sungshinViolet,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: textDark,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '예: 추천 옷차림이 조금 추웠어요.\n겉옷을 더 추천해주면 좋겠어요.',
-                    hintStyle: TextStyle(
+                  const Text(
+                    '추천이 어땠는지 자유롭게 알려주세요',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: sungshinBrightViolet.withOpacity(0.55),
                       height: 1.4,
-                    ),
-                    filled: true,
-                    fillColor: softViolet.withOpacity(0.55),
-                    counterStyle: TextStyle(
-                      color: sungshinBrightViolet.withOpacity(0.7),
                       fontWeight: FontWeight.w600,
+                      color: sungshinBrightViolet,
                     ),
-                    contentPadding: const EdgeInsets.all(16),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(22),
-                      borderSide: const BorderSide(
-                        color: borderViolet,
-                        width: 1.4,
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  TextField(
+                    controller: feedbackController,
+                    maxLines: 6,
+                    maxLength: 300,
+                    cursorColor: sungshinViolet,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: textDark,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '예: 추천 옷차림이 조금 추웠어요.\n겉옷을 더 추천해주면 좋겠어요.',
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: sungshinBrightViolet.withOpacity(0.55),
+                        height: 1.4,
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(22),
-                      borderSide: const BorderSide(
-                        color: sungshinViolet,
-                        width: 1.6,
+                      filled: true,
+                      fillColor: softViolet.withOpacity(0.55),
+                      counterStyle: TextStyle(
+                        color: sungshinBrightViolet.withOpacity(0.7),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: const BorderSide(
+                          color: borderViolet,
+                          width: 1.4,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: const BorderSide(
+                          color: sungshinViolet,
+                          width: 1.6,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: sungshinViolet,
-                            side: const BorderSide(
-                              color: borderViolet,
-                              width: 1.4,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          child: const Text(
-                            '취소',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('피드백이 저장되었어요.'),
-                                duration: Duration(seconds: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: sungshinViolet,
+                              side: const BorderSide(
+                                color: borderViolet,
+                                width: 1.4,
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: sungshinViolet,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
                             ),
-                          ),
-                          child: const Text(
-                            '보내기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                            child: const Text(
+                              '취소',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('피드백이 저장되었어요.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: sungshinViolet,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: const Text(
+                              '보내기',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    },
-  ).then((_) {
-    feedbackController.dispose();
-  });
-}
+        );
+      },
+    ).then((_) {
+      feedbackController.dispose();
+    });
+  }
 }
