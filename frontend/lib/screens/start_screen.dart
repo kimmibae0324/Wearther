@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'user_info_screen.dart';
 
 class StartScreen extends StatelessWidget {
@@ -22,7 +22,7 @@ class StartScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-                const SizedBox(height: 76),
+                const SizedBox(height: 48),
 
                 const Text(
                   'Wearther',
@@ -34,10 +34,11 @@ class StartScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 Text(
                   '오늘 날씨에 맞는 옷을 추천해드려요',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -46,16 +47,16 @@ class StartScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 130),
-
-                Image.asset(
-                  'assets/characters/dragon_base.png',
-                  width: 340,
-                  height: 340,
-                  fit: BoxFit.contain,
+                Expanded(
+                  child: Center(
+                    child: Image.asset(
+                      'assets/characters/dragon_base.png',
+                      width: 300,
+                      height: 300,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-
-                const Spacer(),
 
                 SizedBox(
                   width: double.infinity,
@@ -88,7 +89,7 @@ class StartScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 34),
+                const SizedBox(height: 22),
               ],
             ),
           ),
