@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserInfoScreen extends StatefulWidget {
-  const UserInfoScreen({super.key});
+  const UserInfoScreen({super.key, this.isUpdate = false});
+
+  final bool isUpdate;
 
   @override
   State<UserInfoScreen> createState() => _UserInfoScreenState();
@@ -16,23 +21,75 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   String selectedAge = '10대';
   String? coldLevel;
   String? heatLevel;
+  @override
+  void initState() {
+    super.initState();
 
-  final List<String> ageOptions = [
-    '10대',
-    '20대',
-    '30대',
-    '40대',
-    '50대 이상',
-  ];
+    if (widget.isUpdate) {
+      loadUserInfo();
+    }
+  }
 
-  final List<String> levelOptions = [
-    '안탐',
-    '보통',
-    '잘탐',
-  ];
+  Future<void> loadUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      selectedAge = prefs.getString("age") ?? "20대";
+
+      coldLevel = prefs.getString("coldLevel");
+
+      heatLevel = prefs.getString("heatLevel");
+    });
+  }
+
+  final List<String> ageOptions = ['10대', '20대', '30대', '40대', '50대 이상'];
+
+  final List<String> levelOptions = ['안탐', '보통', '잘탐'];
 
   bool get isReady {
     return coldLevel != null && heatLevel != null;
+  }
+
+  int convertLevel(String level) {
+    switch (level) {
+      case '잘탐':
+        return 1;
+      case '보통':
+        return 0;
+      case '안탐':
+        return -1;
+      default:
+        return 0;
+    }
+  }
+
+  Future<int> registerUser() async {
+    final response = await http.post(
+      Uri.parse("http://127.0.0.1:8001/user/register"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "age_group": selectedAge,
+        "cold_sensitivity": convertLevel(coldLevel!),
+        "heat_sensitivity": convertLevel(heatLevel!),
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    return data["user_id"];
+  }
+
+  Future<void> updateUser(int userId) async {
+    await http.post(
+      Uri.parse("http://127.0.0.1:8001/user/update"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "user_id": userId,
+        "age_group": selectedAge,
+        "cold_sensitivity": convertLevel(coldLevel!),
+        "heat_sensitivity": convertLevel(heatLevel!),
+      }),
+    );
   }
 
   @override
@@ -45,10 +102,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF7F2FF),
-              Color(0xFFFFFBF4),
-            ],
+            colors: [Color(0xFFF7F2FF), Color(0xFFFFFBF4)],
           ),
         ),
         child: SafeArea(
@@ -85,16 +139,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                       TextSpan(text: '나에게 맞는 '),
                       TextSpan(
                         text: '추천',
-                        style: TextStyle(
-                          color: sungshinViolet,
-                        ),
+                        style: TextStyle(color: sungshinViolet),
                       ),
                       TextSpan(text: '을 위해\n'),
                       TextSpan(
                         text: '기본 정보',
-                        style: TextStyle(
-                          color: sungshinViolet,
-                        ),
+                        style: TextStyle(color: sungshinViolet),
                       ),
                       TextSpan(text: '를 알려주세요'),
                     ],
@@ -139,11 +189,32 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   height: 64,
                   child: ElevatedButton(
                     onPressed: isReady
-                        ? () {
+                        ? () async {
+                            final prefs = await SharedPreferences.getInstance();
+
+                            int? userId = prefs.getInt("user_id");
+
+                            if (widget.isUpdate) {
+                              // 설정 화면에서 들어온 경우
+                              await updateUser(userId!);
+                            } else {
+                              // 첫 실행
+                              userId = await registerUser();
+                              await prefs.setInt("user_id", userId);
+                            }
+
+                            //항상 최신정보 저장
+                            await prefs.setString("age", selectedAge);
+                            await prefs.setString("coldLevel", coldLevel!);
+                            await prefs.setString("heatLevel", heatLevel!);
+
+                            if (!mounted) return;
+
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => HomeScreen(
+                                  userId: userId!,
                                   age: selectedAge,
                                   coldLevel: coldLevel!,
                                   heatLevel: heatLevel!,
@@ -201,10 +272,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: sungshinViolet.withOpacity(0.18),
-          width: 1.5,
-        ),
+        border: Border.all(color: sungshinViolet.withOpacity(0.18), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: sungshinViolet.withOpacity(0.06),
@@ -228,10 +296,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
             color: sungshinBrightViolet,
           ),
           items: ageOptions.map((age) {
-            return DropdownMenuItem<String>(
-              value: age,
-              child: Text(age),
-            );
+            return DropdownMenuItem<String>(value: age, child: Text(age));
           }).toList(),
           onChanged: (value) {
             if (value == null) return;
@@ -276,9 +341,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: sungshinViolet.withOpacity(
-                    isSelected ? 0.18 : 0.05,
-                  ),
+                  color: sungshinViolet.withOpacity(isSelected ? 0.18 : 0.05),
                   blurRadius: isSelected ? 14 : 10,
                   offset: const Offset(0, 7),
                 ),
@@ -290,9 +353,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: isSelected
-                      ? Colors.white
-                      : sungshinBrightViolet,
+                  color: isSelected ? Colors.white : sungshinBrightViolet,
                 ),
               ),
             ),

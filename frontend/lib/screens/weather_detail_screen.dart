@@ -4,16 +4,23 @@ class WeatherDetailScreen extends StatelessWidget {
   const WeatherDetailScreen({
     super.key,
     required this.temperature,
+    required this.recommendedTemperature,
+    required this.humidity,
     required this.weather,
     required this.dust,
+    required this.futureForecast,
     required this.age,
     required this.coldLevel,
     required this.heatLevel,
   });
 
-  final int temperature;
+  final double temperature;
+  final double recommendedTemperature;
+  final int humidity;
   final String weather;
   final String dust;
+  final List<Map<String, dynamic>> futureForecast;
+
   final String age;
   final String coldLevel;
   final String heatLevel;
@@ -62,10 +69,7 @@ class WeatherDetailScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF7F2FF),
-              Color(0xFFFFFBF4),
-            ],
+            colors: [Color(0xFFF7F2FF), Color(0xFFFFFBF4)],
           ),
         ),
         child: SafeArea(
@@ -200,7 +204,7 @@ class WeatherDetailScreen extends StatelessWidget {
         Expanded(
           child: _buildSmallInfoCard(
             title: '체감',
-            value: '${temperature - 1}°C',
+            value: '${recommendedTemperature.toStringAsFixed(1)}°C',
             icon: Icons.thermostat_rounded,
           ),
         ),
@@ -208,7 +212,7 @@ class WeatherDetailScreen extends StatelessWidget {
         Expanded(
           child: _buildSmallInfoCard(
             title: '습도',
-            value: '45%',
+            value: '$humidity%',
             icon: Icons.water_drop_rounded,
           ),
         ),
@@ -235,10 +239,7 @@ class WeatherDetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: borderViolet,
-          width: 1.3,
-        ),
+        border: Border.all(color: borderViolet, width: 1.3),
         boxShadow: [
           BoxShadow(
             color: sungshinViolet.withOpacity(0.04),
@@ -250,11 +251,7 @@ class WeatherDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: sungshinViolet,
-          ),
+          Icon(icon, size: 22, color: sungshinViolet),
           const Spacer(),
           Text(
             title,
@@ -291,12 +288,7 @@ class WeatherDetailScreen extends StatelessWidget {
   }
 
   Widget _buildHourlySection() {
-    final List<Map<String, dynamic>> hourly = [
-      {'time': '09:00', 'temp': 18, 'sky': '맑음'},
-      {'time': '12:00', 'temp': 22, 'sky': '맑음'},
-      {'time': '15:00', 'temp': 24, 'sky': '구름많음'},
-      {'time': '18:00', 'temp': 21, 'sky': '흐림'},
-    ];
+    final hourly = futureForecast;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,10 +315,7 @@ class WeatherDetailScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.92),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: borderViolet,
-                    width: 1.3,
-                  ),
+                  border: Border.all(color: borderViolet, width: 1.3),
                   boxShadow: [
                     BoxShadow(
                       color: sungshinViolet.withOpacity(0.04),
@@ -353,7 +342,7 @@ class WeatherDetailScreen extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      '${item['temp']}°C',
+                      '${item['temperature']}°C',
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -370,6 +359,7 @@ class WeatherDetailScreen extends StatelessWidget {
     );
   }
 
+  //주간예보
   Widget _buildWeeklySection() {
     final List<Map<String, dynamic>> weekly = [
       {'day': '오늘', 'sky': '맑음', 'min': 15, 'max': 24},
@@ -390,10 +380,7 @@ class WeatherDetailScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.92),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: borderViolet,
-              width: 1.3,
-            ),
+            border: Border.all(color: borderViolet, width: 1.3),
             boxShadow: [
               BoxShadow(
                 color: sungshinViolet.withOpacity(0.04),
