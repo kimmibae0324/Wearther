@@ -421,11 +421,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String get dustMessage {
     if (dust.contains('매우')) {
-      return '공기가 많이 탁해요. 외출을 조심해요.';
+      return '공기가 많이 탁해요. \n외출을 조심해요.';
     }
 
     if (dust.contains('나쁨')) {
-      return '공기가 탁해요. 마스크를 챙겨요.';
+      return '공기가 탁해요. \n마스크를 챙겨요.';
     }
 
     if (dust.contains('좋음')) {
@@ -556,7 +556,11 @@ String get outfitMessage {
 
                       _buildWeatherCard(),
 
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 18),
+
+                      _buildPersonalFeelingCard(),
+
+                      const SizedBox(height: 18),
 
                       Expanded(child: _buildCharacterArea()),
 
@@ -767,6 +771,131 @@ String get outfitMessage {
     );
   }
 
+  String get personalFeelingMessage {
+  if (weather == '눈' || recommendedOutfit == 'snow') {
+    return '눈 오는 날은 체감상 더 춥게 느껴질 수 있어요. 따뜻한 겉옷과 미끄럽지 않은 신발을 챙겨주세요.';
+  }
+
+  if (weather == '비' || recommendedOutfit == 'raincoat') {
+    return '비가 오는 날은 습도 때문에 체감이 달라질 수 있어요. 우비나 가벼운 겉옷을 챙기면 좋아요.';
+  }
+
+  if (recommendedOutfit == 'raincoat_umbrella') {
+    return '비가 많이 올 수 있어요. 우비와 우산을 함께 챙기면 더 편하게 이동할 수 있어요.';
+  }
+
+  if (widget.coldLevel.contains('많이') || widget.coldLevel.contains('잘')) {
+    return '추위를 잘 타는 편이라 실제 기온보다 더 서늘하게 느낄 수 있어요. 얇은 겉옷을 챙기면 좋아요.';
+  }
+
+  if (widget.heatLevel.contains('많이') || widget.heatLevel.contains('잘')) {
+    return '더위를 잘 타는 편이라 답답하지 않은 옷차림이 좋아요. 통풍이 잘 되는 옷을 추천해요.';
+  }
+
+  switch (recommendedOutfit) {
+    case 'short_short':
+      return '오늘은 체감상 더운 날씨예요. 반팔과 반바지로 가볍게 입기 좋아요.';
+
+    case 'short_long':
+      return '오늘은 체감상 따뜻한 날씨예요. 반팔에 긴바지 정도면 편하게 입을 수 있어요.';
+
+    case 'long_long':
+      return '오늘은 체감상 무난한 날씨예요. 긴팔과 긴바지 정도면 편하게 입을 수 있어요.';
+
+    case 'cardigan_long':
+    case 'cardigan':
+      return '오늘은 살짝 서늘할 수 있어요. 가디건과 긴바지를 함께 입으면 좋아요.';
+
+    case 'zipup_long':
+    case 'zipup':
+      return '오늘은 제법 선선한 날씨예요. 집업과 긴바지를 챙기면 든든해요.';
+
+    case 'coat_long':
+    case 'coat':
+      return '오늘은 체감상 쌀쌀한 날씨예요. 코트와 긴바지로 따뜻하게 입는 걸 추천해요.';
+
+    case 'padding':
+      return '오늘은 많이 추울 수 있어요. 패딩으로 체온을 따뜻하게 유지해주세요.';
+
+    default:
+      return '오늘 날씨와 체감에 맞춰 편안한 옷차림을 추천해드릴게요.';
+  }
+}
+
+  Widget _buildPersonalFeelingCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.76),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 34,
+                height: 34,
+                child: Image.asset(
+                  'assets/characters/dragon_face_wink.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                '사용자 맞춤 체감 설명',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: sungshinViolet,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+            personalFeelingMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              height: 1.55,
+              color: textDark,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '나이대 ${widget.age} · 추위 ${widget.coldLevel} · 더위 ${widget.heatLevel}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: sungshinBrightViolet,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCharacterArea() {
     return SizedBox(
       height: 560,
@@ -778,7 +907,7 @@ String get outfitMessage {
             bottom: 60,
             child: SizedBox(
               width: 330,
-              height: 330,
+              height: 310,
               child: Image.asset(outfitImagePath, fit: BoxFit.contain),
             ),
           ),
@@ -829,7 +958,7 @@ String get outfitMessage {
             ],
           ),
           child: Text(
-            outfitMessage,
+            dustMessage,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,

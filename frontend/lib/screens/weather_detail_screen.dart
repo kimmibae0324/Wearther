@@ -124,10 +124,6 @@ class WeatherDetailScreen extends StatelessWidget {
                       _buildWeeklySection(),
 
                       const SizedBox(height: 28),
-
-                      _buildPersonalCard(),
-
-                      const SizedBox(height: 36),
                     ],
                   ),
                 ),
@@ -446,79 +442,5 @@ class WeatherDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPersonalCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: softViolet.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: sungshinViolet.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 34,
-                  height: 34,
-                  child: Image.asset(
-                    'assets/characters/dragon_face_wink.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                '사용자 맞춤 체감 설명',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: sungshinViolet,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
 
-          Text(
-            getPersonalMessage(),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              height: 1.55,
-              color: textDark,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.65),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              '나이대 $age · 추위 $coldLevel · 더위 $heatLevel',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: sungshinBrightViolet,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
