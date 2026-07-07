@@ -9,6 +9,7 @@ class WeatherDetailScreen extends StatelessWidget {
     required this.weather,
     required this.dust,
     required this.futureForecast,
+    required this.midForecast, // [추가됨] 주간예보 데이터
     required this.age,
     required this.coldLevel,
     required this.heatLevel,
@@ -20,6 +21,7 @@ class WeatherDetailScreen extends StatelessWidget {
   final String weather;
   final String dust;
   final List<Map<String, dynamic>> futureForecast;
+  final List<Map<String, dynamic>> midForecast; // [추가됨] 주간예보 데이터
 
   final String age;
   final String coldLevel;
@@ -355,15 +357,8 @@ class WeatherDetailScreen extends StatelessWidget {
     );
   }
 
-  //주간예보
+  // [수정됨] 실제 서버 주간예보 데이터를 사용하도록 바뀐 부분
   Widget _buildWeeklySection() {
-    final List<Map<String, dynamic>> weekly = [
-      {'day': '오늘', 'sky': '맑음', 'min': 15, 'max': 24},
-      {'day': '내일', 'sky': '구름', 'min': 16, 'max': 23},
-      {'day': '수', 'sky': '비', 'min': 17, 'max': 21},
-      {'day': '목', 'sky': '맑음', 'min': 14, 'max': 25},
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -386,8 +381,11 @@ class WeatherDetailScreen extends StatelessWidget {
             ],
           ),
           child: Column(
-            children: weekly.map((item) {
-              final String sky = item['sky'].toString();
+            children: midForecast.map((item) {
+              final String day = item['day_after']?.toString() ?? '-';
+              final String sky = item['sky_am']?.toString() ?? '맑음';
+              final String minTemp = item['min_temp']?.toString() ?? '0';
+              final String maxTemp = item['max_temp']?.toString() ?? '0';
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -396,7 +394,7 @@ class WeatherDetailScreen extends StatelessWidget {
                     SizedBox(
                       width: 50,
                       child: Text(
-                        item['day'].toString(),
+                        day,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -425,7 +423,7 @@ class WeatherDetailScreen extends StatelessWidget {
                     ),
 
                     Text(
-                      '${item['min']}° / ${item['max']}°',
+                      '$minTemp° / $maxTemp°',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -441,6 +439,4 @@ class WeatherDetailScreen extends StatelessWidget {
       ],
     );
   }
-
-
 }
