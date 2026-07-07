@@ -21,3 +21,7 @@ class WeatherLog(Base):
     humidity = Column(Integer)
     sky = Column(String(20))
     character_state = Column(String(50))
+    
+    pm10 = Column(Float, default=0.0)             # 미세먼지 농도 (예: 45.5)
+    pm10_grade = Column(String(20), default="보통") # 미세먼지 등급 (좋음/보통/나쁨/매우나쁨)
+    rain_gear = Column(String(50), default="없음")  # 우비/우산 추천 정보 (우비+우산 / 우비 / 없음)
