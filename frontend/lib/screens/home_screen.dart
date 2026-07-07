@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String weather = '';
   String dust = '나쁨';
   List<Map<String, dynamic>> futureForecast = []; //실시간예보를 위한 코드
+  List<Map<String, dynamic>> midForecast = []; // [추가됨] 주간예보를 위한 코드
 
   Future<void> fetchWeather() async {
     try {
@@ -75,7 +76,11 @@ class _HomeScreenState extends State<HomeScreen> {
           futureForecast = List<Map<String, dynamic>>.from(
             data['future_forecast'],
           );
-          //실시간예보
+
+          // [추가됨] 백엔드에서 준 주간예보 데이터 저장
+          midForecast = List<Map<String, dynamic>>.from(
+            data['mid_forecast'],
+          );
         });
 
         print(futureForecast);
@@ -354,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 사용자 맞춤 옷차림
-// 사용자 맞춤 수룡이 이미지
+  // 사용자 맞춤 수룡이 이미지
   String get outfitImagePath {
     // 1순위: 눈
     if (weather == '눈' || recommendedOutfit == 'snow') {
@@ -483,48 +488,49 @@ class _HomeScreenState extends State<HomeScreen> {
     return !isDaytime;
   }
 
-String get outfitMessage {
-  if (weather == '눈' || recommendedOutfit == 'snow') {
-    return '눈 오는 날엔 미끄럽지 않게,\n따뜻하게 입어요.\n$dustMessage';
+  String get outfitMessage {
+    if (weather == '눈' || recommendedOutfit == 'snow') {
+      return '눈 오는 날엔 미끄럽지 않게,\n따뜻하게 입어요.\n$dustMessage';
+    }
+
+    if (recommendedOutfit == 'raincoat_umbrella') {
+      return '비가 많이 올 수 있어요.\n우비와 우산을 함께 챙겨요.\n$dustMessage';
+    }
+
+    if (weather == '비' || recommendedOutfit == 'raincoat') {
+      return '비가 와요.\n우비를 챙기면 좋아요.\n$dustMessage';
+    }
+
+    switch (recommendedOutfit) {
+      case "short_short":
+        return "반팔과 반바지를 추천해요.\n$dustMessage";
+
+      case "short_long":
+        return "반팔과 긴바지를 추천해요.\n$dustMessage";
+
+      case "long_long":
+        return "긴팔과 긴바지를 추천해요.\n$dustMessage";
+
+      case "cardigan_long":
+      case "cardigan":
+        return "가디건과 긴바지를 추천해요.\n$dustMessage";
+
+      case "zipup_long":
+      case "zipup":
+        return "집업과 긴바지를 입으면 좋아요.\n$dustMessage";
+
+      case "coat_long":
+      case "coat":
+        return "코트와 긴바지로 따뜻하게 입어요.\n$dustMessage";
+
+      case "padding":
+        return "패딩으로 든든하게 입어요.\n$dustMessage";
+
+      default:
+        return "오늘 날씨에 맞는 옷차림을 확인해보세요.\n$dustMessage";
+    }
   }
 
-  if (recommendedOutfit == 'raincoat_umbrella') {
-    return '비가 많이 올 수 있어요.\n우비와 우산을 함께 챙겨요.\n$dustMessage';
-  }
-
-  if (weather == '비' || recommendedOutfit == 'raincoat') {
-    return '비가 와요.\n우비를 챙기면 좋아요.\n$dustMessage';
-  }
-
-  switch (recommendedOutfit) {
-    case "short_short":
-      return "반팔과 반바지를 추천해요.\n$dustMessage";
-
-    case "short_long":
-      return "반팔과 긴바지를 추천해요.\n$dustMessage";
-
-    case "long_long":
-      return "긴팔과 긴바지를 추천해요.\n$dustMessage";
-
-    case "cardigan_long":
-    case "cardigan":
-      return "가디건과 긴바지를 추천해요.\n$dustMessage";
-
-    case "zipup_long":
-    case "zipup":
-      return "집업과 긴바지를 입으면 좋아요.\n$dustMessage";
-
-    case "coat_long":
-    case "coat":
-      return "코트와 긴바지로 따뜻하게 입어요.\n$dustMessage";
-
-    case "padding":
-      return "패딩으로 든든하게 입어요.\n$dustMessage";
-
-    default:
-      return "오늘 날씨에 맞는 옷차림을 확인해보세요.\n$dustMessage";
-  }
-}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -709,6 +715,7 @@ String get outfitMessage {
               weather: weather,
               dust: dust,
               futureForecast: futureForecast,
+              midForecast: midForecast, // [추가됨] 주간예보 전달
               age: widget.age,
               coldLevel: widget.coldLevel,
               heatLevel: widget.heatLevel,
@@ -772,55 +779,55 @@ String get outfitMessage {
   }
 
   String get personalFeelingMessage {
-  if (weather == '눈' || recommendedOutfit == 'snow') {
-    return '눈 오는 날은 체감상 더 춥게 느껴질 수 있어요. 따뜻한 겉옷과 미끄럽지 않은 신발을 챙겨주세요.';
+    if (weather == '눈' || recommendedOutfit == 'snow') {
+      return '눈 오는 날은 체감상 더 춥게 느껴질 수 있어요. 따뜻한 겉옷과 미끄럽지 않은 신발을 챙겨주세요.';
+    }
+
+    if (weather == '비' || recommendedOutfit == 'raincoat') {
+      return '비가 오는 날은 습도 때문에 체감이 달라질 수 있어요. 우비나 가벼운 겉옷을 챙기면 좋아요.';
+    }
+
+    if (recommendedOutfit == 'raincoat_umbrella') {
+      return '비가 많이 올 수 있어요. 우비와 우산을 함께 챙기면 더 편하게 이동할 수 있어요.';
+    }
+
+    if (widget.coldLevel.contains('많이') || widget.coldLevel.contains('잘')) {
+      return '추위를 잘 타는 편이라 실제 기온보다 더 서늘하게 느낄 수 있어요. 얇은 겉옷을 챙기면 좋아요.';
+    }
+
+    if (widget.heatLevel.contains('많이') || widget.heatLevel.contains('잘')) {
+      return '더위를 잘 타는 편이라 답답하지 않은 옷차림이 좋아요. 통풍이 잘 되는 옷을 추천해요.';
+    }
+
+    switch (recommendedOutfit) {
+      case 'short_short':
+        return '오늘은 체감상 더운 날씨예요. 반팔과 반바지로 가볍게 입기 좋아요.';
+
+      case 'short_long':
+        return '오늘은 체감상 따뜻한 날씨예요. 반팔에 긴바지 정도면 편하게 입을 수 있어요.';
+
+      case 'long_long':
+        return '오늘은 체감상 무난한 날씨예요. 긴팔과 긴바지 정도면 편하게 입을 수 있어요.';
+
+      case 'cardigan_long':
+      case 'cardigan':
+        return '오늘은 살짝 서늘할 수 있어요. 가디건과 긴바지를 함께 입으면 좋아요.';
+
+      case 'zipup_long':
+      case 'zipup':
+        return '오늘은 제법 선선한 날씨예요. 집업과 긴바지를 챙기면 든든해요.';
+
+      case 'coat_long':
+      case 'coat':
+        return '오늘은 체감상 쌀쌀한 날씨예요. 코트와 긴바지로 따뜻하게 입는 걸 추천해요.';
+
+      case 'padding':
+        return '오늘은 많이 추울 수 있어요. 패딩으로 체온을 따뜻하게 유지해주세요.';
+
+      default:
+        return '오늘 날씨와 체감에 맞춰 편안한 옷차림을 추천해드릴게요.';
+    }
   }
-
-  if (weather == '비' || recommendedOutfit == 'raincoat') {
-    return '비가 오는 날은 습도 때문에 체감이 달라질 수 있어요. 우비나 가벼운 겉옷을 챙기면 좋아요.';
-  }
-
-  if (recommendedOutfit == 'raincoat_umbrella') {
-    return '비가 많이 올 수 있어요. 우비와 우산을 함께 챙기면 더 편하게 이동할 수 있어요.';
-  }
-
-  if (widget.coldLevel.contains('많이') || widget.coldLevel.contains('잘')) {
-    return '추위를 잘 타는 편이라 실제 기온보다 더 서늘하게 느낄 수 있어요. 얇은 겉옷을 챙기면 좋아요.';
-  }
-
-  if (widget.heatLevel.contains('많이') || widget.heatLevel.contains('잘')) {
-    return '더위를 잘 타는 편이라 답답하지 않은 옷차림이 좋아요. 통풍이 잘 되는 옷을 추천해요.';
-  }
-
-  switch (recommendedOutfit) {
-    case 'short_short':
-      return '오늘은 체감상 더운 날씨예요. 반팔과 반바지로 가볍게 입기 좋아요.';
-
-    case 'short_long':
-      return '오늘은 체감상 따뜻한 날씨예요. 반팔에 긴바지 정도면 편하게 입을 수 있어요.';
-
-    case 'long_long':
-      return '오늘은 체감상 무난한 날씨예요. 긴팔과 긴바지 정도면 편하게 입을 수 있어요.';
-
-    case 'cardigan_long':
-    case 'cardigan':
-      return '오늘은 살짝 서늘할 수 있어요. 가디건과 긴바지를 함께 입으면 좋아요.';
-
-    case 'zipup_long':
-    case 'zipup':
-      return '오늘은 제법 선선한 날씨예요. 집업과 긴바지를 챙기면 든든해요.';
-
-    case 'coat_long':
-    case 'coat':
-      return '오늘은 체감상 쌀쌀한 날씨예요. 코트와 긴바지로 따뜻하게 입는 걸 추천해요.';
-
-    case 'padding':
-      return '오늘은 많이 추울 수 있어요. 패딩으로 체온을 따뜻하게 유지해주세요.';
-
-    default:
-      return '오늘 날씨와 체감에 맞춰 편안한 옷차림을 추천해드릴게요.';
-  }
-}
 
   Widget _buildPersonalFeelingCard() {
     return Container(
@@ -904,7 +911,7 @@ String get outfitMessage {
         children: [
           // 본문 수룡이 캐릭터
           Positioned(
-            bottom: 50,
+            bottom: 60,
             child: SizedBox(
               width: 330,
               height: 310,
@@ -918,7 +925,7 @@ String get outfitMessage {
           // 수정구 버튼
           Positioned(
             right: 18,
-            bottom: 30,
+            bottom: 42,
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -969,61 +976,61 @@ String get outfitMessage {
           ),
         ),
 
-      // 수정구 쪽으로 이어지는 마법 연기
-      Positioned(
-        right: -48,
-        bottom: 8,
-        child: SizedBox(
-          width: 64,
-          height: 56,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0,
-                top: 2,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.82),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: sungshinBrightViolet.withOpacity(0.18),
-                        blurRadius: 12,
-                      ),
-                    ],
+        // 수정구 쪽으로 이어지는 마법 연기
+        Positioned(
+          right: -48,
+          bottom: 8,
+          child: SizedBox(
+            width: 64,
+            height: 56,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 2,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.82),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: sungshinBrightViolet.withOpacity(0.18),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 26,
-                top: 24,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.78),
-                    shape: BoxShape.circle,
+                Positioned(
+                  left: 26,
+                  top: 24,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.78),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 48,
-                top: 44,
-                child: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.78),
-                    shape: BoxShape.circle,
+                Positioned(
+                  left: 48,
+                  top: 44,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.78),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
         // 작은 마법 반짝이
         Positioned(
           right: 12,
