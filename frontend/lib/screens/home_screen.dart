@@ -904,7 +904,7 @@ String get outfitMessage {
         children: [
           // 본문 수룡이 캐릭터
           Positioned(
-            bottom: 60,
+            bottom: 50,
             child: SizedBox(
               width: 330,
               height: 310,
@@ -918,7 +918,7 @@ String get outfitMessage {
           // 수정구 버튼
           Positioned(
             right: 18,
-            bottom: 42,
+            bottom: 30,
             child: GestureDetector(
               onTap: () {
                 setState(() {
