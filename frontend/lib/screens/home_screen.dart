@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart'; // 날씨아이콘에 사용
+﻿import 'package:flutter/material.dart'; // 날씨아이콘에 사용
 import 'package:lucide_flutter/lucide_flutter.dart'; // 날씨아이콘에 사용
 import 'weather_detail_screen.dart';
 import 'settings_screen.dart';
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:flutter/foundation.dart';
+import 'package:home_widget/home_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -42,13 +45,27 @@ class _HomeScreenState extends State<HomeScreen> {
   String recommendedOutfit = "";
   String weather = '';
   String dust = '나쁨';
+  String characterState = '보통_무표정';
   List<Map<String, dynamic>> futureForecast = []; //실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // [추가됨] 주간예보를 위한 코드
+
+  //안드로이드 에퓰레이터용 api 주소 변환 함수
+  String get apiBaseUrl {
+  if (kIsWeb) {
+    return 'http://127.0.0.1:8001';
+  }
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8001';
+  }
+
+  return 'http://127.0.0.1:8001';
+}
 
   Future<void> fetchWeather() async {
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8001/weather/custom-info'),
+        Uri.parse('$apiBaseUrl/weather/custom-info'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'user_id': widget.userId,
@@ -71,7 +88,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
           recommendedOutfit = data['current_weather']['recommended_outfit'];
 
+          print('위젯 recommendedOutfit 값: $recommendedOutfit');
+
           weather = data['current_weather']['sky'];
+
+          characterState =
+            (data['current_weather']['character_state'] ?? '보통_무표정')
+                .toString();
 
           futureForecast = List<Map<String, dynamic>>.from(
             data['future_forecast'],
@@ -83,6 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         });
 
+        await updateAndroidHomeWidget(); // 안드로이드 홈 위젯 업데이트
+
         print(futureForecast);
       } else {
         print('API 오류: ${response.statusCode}');
@@ -92,6 +117,104 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  //위젯용 변환 함수
+  String get widgetFaceEmoji {
+    switch (characterState) {
+      case '더움_땀뻘뻘':
+        return '🥵';
+
+      case '추움_덜덜':
+        return '🥶';
+
+      case '습함_불쾌':
+        return '😣';
+
+      case '쾌적_스마일':
+        return '😊';
+
+      case '보통_무표정':
+      default:
+        return '😐';
+    }
+  }
+
+
+  String get widgetOutfitLabel {
+    final outfit = recommendedOutfit.trim();
+
+    switch (outfit) {
+      case '숏+숏':
+      case 'short_short':
+        return '반팔+반바지';
+
+      case '숏+롱':
+      case 'short_long':
+        return '반팔+긴바지';
+
+      case '롱+롱':
+      case 'long_long':
+        return '긴팔+긴바지';
+
+      case '가디건+긴':
+      case 'cardigan_long':
+      case 'cardigan':
+        return '가디건+긴바지';
+
+      case '집업+긴':
+      case 'zipup_long':
+      case 'zipup':
+        return '집업+긴바지';
+
+      case '코트+긴':
+      case 'coat_long':
+      case 'coat':
+        return '코트+긴바지';
+
+      case '패딩':
+      case 'padding':
+        return '패딩';
+
+      default:
+        print('매칭 안 된 recommendedOutfit: $recommendedOutfit');
+        return recommendedOutfit.isNotEmpty
+            ? recommendedOutfit
+            : '날씨 맞춤 옷차림';
+    }
+  }
+  Future<void> updateAndroidHomeWidget() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    await HomeWidget.saveWidgetData<String>(
+      'widget_character_state',
+      characterState,
+    );
+
+    await HomeWidget.saveWidgetData<String>(
+      'widget_face',
+      widgetFaceEmoji,
+    );
+
+    await HomeWidget.saveWidgetData<String>(
+      'widget_outfit',
+      '옷 추천: $widgetOutfitLabel',
+    );
+
+    await HomeWidget.saveWidgetData<String>(
+      'widget_temp',
+      '기온: ${temperature.toStringAsFixed(1)}°C',
+    );
+
+    await HomeWidget.saveWidgetData<String>(
+      'widget_weather',
+      '날씨: $weather',
+    );
+
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: 'com.example.wearther.WeartherWidgetProvider',
+    );
+  }
   void _showWeeklyFeedbackDialog() {
     String selectedFeedback = '좋았어요';
 

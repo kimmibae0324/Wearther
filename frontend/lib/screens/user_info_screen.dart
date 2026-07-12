@@ -1,8 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class UserInfoScreen extends StatefulWidget {
   const UserInfoScreen({super.key, this.isUpdate = false});
@@ -26,6 +27,18 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   final List<String> ageOptions = ['10대', '20대', '30대', '40대', '50대 이상'];
   final List<int> sensitivityOptions = [0, 25, 50, 75, 100];
+
+  String get apiBaseUrl {
+  if (kIsWeb) {
+    return 'http://127.0.0.1:8001';
+  }
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8001';
+  }
+
+  return 'http://127.0.0.1:8001';
+}
 
   @override
   void initState() {
@@ -98,7 +111,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   Future<int> registerUser() async {
     final response = await http.post(
-      Uri.parse("http://127.0.0.1:8001/user/register"),
+      Uri.parse('$apiBaseUrl/user/register'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "age_group": selectedAge,
@@ -114,7 +127,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   Future<void> updateUser(int userId) async {
     await http.post(
-      Uri.parse("http://127.0.0.1:8001/user/update"),
+      Uri.parse('$apiBaseUrl/user/update'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "user_id": userId,

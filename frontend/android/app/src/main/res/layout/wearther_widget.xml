@@ -8,13 +8,15 @@
     android:padding="16dp"
     android:background="@drawable/widget_background">
 
-    <TextView
+    <ImageView
         android:id="@+id/widget_face"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:gravity="center"
-        android:text="😐"
-        android:textSize="38sp" />
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginEnd="16dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/dragon_face_normal"
+        android:contentDescription="수룡이 상태 얼굴" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -36,7 +38,7 @@
             android:id="@+id/widget_outfit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="추천 옷차림: 확인 중"
+            android:text="옷 추천: 확인 중"
             android:textColor="#37474F"
             android:textSize="14sp"
             android:textStyle="bold"
