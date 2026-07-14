@@ -87,7 +87,7 @@ def get_pm10_info(lat, lon, api_key):
         return 0.0, "보통"
 
 # 강수확률 기반 우비/우산 추천 함수
-#def get_rain_gear(pop_prob):
+def get_rain_gear(pop_prob):
     if pop_prob >= 90:
         return "우비+우산"
     elif pop_prob > 0:
@@ -119,7 +119,7 @@ def auto_fetch_and_save_weather():
         temp = 0.0
         humidity = 0
         sky = "알수없음"
-
+        
         for item in items:
             if item['category'] == 'T1H': temp = float(item['obsrValue'])
             elif item['category'] == 'REH': humidity = int(item['obsrValue'])
@@ -140,8 +140,24 @@ def auto_fetch_and_save_weather():
         fcst_items = fcst_response.json()['response']['body']['items']['item']
 
         sky = get_sky(fcst_items)
+
+        pop_prob = 0
+        is_raining = False
+
+        for item in fcst_items:
+            if item["category"] == "POP":
+                pop_prob = int(item["fcstValue"])
+            elif item["category"] == "PTY":
+                if int(item["fcstValue"]) > 0:
+                    is_raining = True
+        
+        if is_raining:
+                rain_gear = "우비+우산"
+        else:
+            rain_gear = get_rain_gear(pop_prob)
+            
         pm10, pm10_grade = get_pm10_info(LAT, LON, OWM_API_KEY)
-        #rain_gear = get_rain_gear(pop_prob)
+        
 
         # 기온/습도에 따른 캐릭터 표정 자동 판별 (나중에 OUTFIT_RULES와 연동할 부분!)
         state = 0 #쾌적
@@ -157,10 +173,10 @@ def auto_fetch_and_save_weather():
         try:
             with connection.cursor() as cursor:
                 sql = """
-                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade, rain_gear) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """
-                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade)) # 임시로 1번 유저로 저장
+                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade, rain_gear)) # 임시로 1번 유저로 저장
             connection.commit() # 진짜로 DB에 도장 쾅!
         finally:
             connection.close()
