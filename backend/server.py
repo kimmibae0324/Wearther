@@ -28,6 +28,9 @@ NY = 127
 NCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst')
 FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
 
+# OpenWeatherMap API
+OWM_API_KEY = '7335d6deae8c0ee7826b672c743ed72a'
+LAT, LON = 37.5636, 127.0032
 
 # 하늘 상태 딕셔너리
 SKY_MAP = {
@@ -42,11 +45,55 @@ def get_safe_time():
 
 # 기상청 SKY 코드를 사람이 읽을 수 있는 하늘 상태 문자열로 변환
 def get_sky(fcst_items):
-    for item in fcst_items:
-        if item["category"] == "SKY":
-            return SKY_MAP.get(item["fcstValue"], "알수없음")
+    sky = "알수없음"
 
-    return "알수없음"
+    for item in fcst_items:
+        if item["category"] == "PTY":
+            pty = int(item["fcstValue"])
+
+            if pty == 1:
+                return "비"
+            elif pty == 2:
+                return "비/눈"
+            elif pty == 3:
+                return "눈"
+            elif pty == 4:
+                return "소나기"
+
+        elif item["category"] == "SKY":
+            sky = SKY_MAP.get(item["fcstValue"], "알수없음")
+
+    return sky
+
+# 미세먼지 API 등급 4단계 세분화 함수
+def get_pm10_info(lat, lon, api_key):
+    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_key}"
+    try:
+        res = requests.get(url, timeout=5).json()
+        pm10 = res['list'][0]['components']['pm10']
+        
+        # 4단계 세분화 (좋음/보통/나쁨/매우나쁨)
+        if pm10 <= 30:
+            grade = "좋음"
+        elif pm10 <= 80:
+            grade = "보통"
+        elif pm10 <= 150:
+            grade = "나쁨"
+        else:
+            grade = "매우나쁨"
+        return pm10, grade
+    except Exception as e:
+        print("⚠️ 미세먼지 API 호출 실패:", e)
+        return 0.0, "보통"
+
+# 강수확률 기반 우비/우산 추천 함수
+#def get_rain_gear(pop_prob):
+    if pop_prob >= 90:
+        return "우비+우산"
+    elif pop_prob > 0:
+        return "우비"
+    else:
+        return "필요없음"
 
 # 현재 날씨를 기상청 API에서 조회하여 DB에 저장
 def auto_fetch_and_save_weather():
@@ -93,6 +140,8 @@ def auto_fetch_and_save_weather():
         fcst_items = fcst_response.json()['response']['body']['items']['item']
 
         sky = get_sky(fcst_items)
+        pm10, pm10_grade = get_pm10_info(LAT, LON, OWM_API_KEY)
+        #rain_gear = get_rain_gear(pop_prob)
 
         # 기온/습도에 따른 캐릭터 표정 자동 판별 (나중에 OUTFIT_RULES와 연동할 부분!)
         state = 0 #쾌적
@@ -108,10 +157,10 @@ def auto_fetch_and_save_weather():
         try:
             with connection.cursor() as cursor:
                 sql = """
-                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state) 
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """
-                cursor.execute(sql, (1, temp, humidity, sky, state)) # 임시로 1번 유저로 저장
+                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade)) # 임시로 1번 유저로 저장
             connection.commit() # 진짜로 DB에 도장 쾅!
         finally:
             connection.close()

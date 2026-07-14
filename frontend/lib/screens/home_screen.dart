@@ -51,16 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //안드로이드 에퓰레이터용 api 주소 변환 함수
   String get apiBaseUrl {
-  if (kIsWeb) {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8001';
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8001';
+    }
+
     return 'http://127.0.0.1:8001';
   }
-
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:8001';
-  }
-
-  return 'http://127.0.0.1:8001';
-}
 
   Future<void> fetchWeather() async {
     try {
@@ -92,18 +92,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
           weather = data['current_weather']['sky'];
 
+          dust = data['current_weather']['pm10_grade'];
+
           characterState =
-            (data['current_weather']['character_state'] ?? '보통_무표정')
-                .toString();
+              (data['current_weather']['character_state'] ?? '보통_무표정')
+                  .toString();
 
           futureForecast = List<Map<String, dynamic>>.from(
             data['future_forecast'],
           );
 
           // [추가됨] 백엔드에서 준 주간예보 데이터 저장
-          midForecast = List<Map<String, dynamic>>.from(
-            data['mid_forecast'],
-          );
+          midForecast = List<Map<String, dynamic>>.from(data['mid_forecast']);
         });
 
         await updateAndroidHomeWidget(); // 안드로이드 홈 위젯 업데이트
@@ -137,7 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
         return '😐';
     }
   }
-
 
   String get widgetOutfitLabel {
     final outfit = recommendedOutfit.trim();
@@ -176,11 +175,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       default:
         print('매칭 안 된 recommendedOutfit: $recommendedOutfit');
-        return recommendedOutfit.isNotEmpty
-            ? recommendedOutfit
-            : '날씨 맞춤 옷차림';
+        return recommendedOutfit.isNotEmpty ? recommendedOutfit : '날씨 맞춤 옷차림';
     }
   }
+
   Future<void> updateAndroidHomeWidget() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return;
@@ -191,10 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
       characterState,
     );
 
-    await HomeWidget.saveWidgetData<String>(
-      'widget_face',
-      widgetFaceEmoji,
-    );
+    await HomeWidget.saveWidgetData<String>('widget_face', widgetFaceEmoji);
 
     await HomeWidget.saveWidgetData<String>(
       'widget_outfit',
@@ -206,15 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
       '기온: ${temperature.toStringAsFixed(1)}°C',
     );
 
-    await HomeWidget.saveWidgetData<String>(
-      'widget_weather',
-      '날씨: $weather',
-    );
+    await HomeWidget.saveWidgetData<String>('widget_weather', '날씨: $weather');
 
     await HomeWidget.updateWidget(
       qualifiedAndroidName: 'com.example.wearther.WeartherWidgetProvider',
     );
   }
+
   void _showWeeklyFeedbackDialog() {
     String selectedFeedback = '좋았어요';
 
@@ -461,14 +454,14 @@ class _HomeScreenState extends State<HomeScreen> {
       case '비':
         return const Icon(
           LucideIcons.cloudRain,
-          color: Color.fromRGBO(138, 216, 255, 1),
+          color: Color(0xFF6B8DD6),
           size: 52,
         );
 
       case '눈':
         return const Icon(
           LucideIcons.cloudSnow,
-          color: Color(0xFF42A5F5),
+          color: Color(0xFF8DBBE8),
           size: 52,
         );
 
@@ -568,25 +561,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 겨울: 11, 12, 1, 2월 → 07:30 / 17:40
     if (month == 11 || month == 12 || month == 1 || month == 2) {
-      return {
-        'sunrise': 7 * 60 + 30,
-        'sunset': 17 * 60 + 40,
-      };
+      return {'sunrise': 7 * 60 + 30, 'sunset': 17 * 60 + 40};
     }
 
     // 봄/가을: 3, 9, 10월 → 06:30 / 18:20
     if (month == 3 || month == 9 || month == 10) {
-      return {
-        'sunrise': 6 * 60 + 30,
-        'sunset': 18 * 60 + 20,
-      };
+      return {'sunrise': 6 * 60 + 30, 'sunset': 18 * 60 + 20};
     }
 
     // 여름: 4~8월 → 05:20 / 19:40
-    return {
-      'sunrise': 5 * 60 + 20,
-      'sunset': 19 * 60 + 40,
-    };
+    return {'sunrise': 5 * 60 + 20, 'sunset': 19 * 60 + 40};
   }
 
   bool get isDaytime {

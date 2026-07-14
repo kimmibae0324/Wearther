@@ -55,6 +55,7 @@ class LocationRequest(BaseModel):
 
 # 회원 등록을 위함
 class UserCreate(BaseModel):
+    nickname: str
     age_group: str
     cold_sensitivity: int
     heat_sensitivity: int
@@ -62,6 +63,7 @@ class UserCreate(BaseModel):
 # 기존 회원 정보 수정할 때 사용
 class UserUpdate(BaseModel):
     user_id: int
+    nickname: str
     age_group: str
     cold_sensitivity: int
     heat_sensitivity: int
@@ -423,6 +425,7 @@ def get_short_forecast(current_temp):
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = models.User(
+        nickname=user.nickname,
         age_group=user.age_group,
         cold_sensitivity=user.cold_sensitivity,
         heat_sensitivity=user.heat_sensitivity
@@ -453,7 +456,7 @@ def update_user(user: UserUpdate, db: Session = Depends(get_db)):
             "status": "error",
             "message": "사용자를 찾을 수 없습니다."
         }
-
+    target.nickname = user.nickname
     target.age_group = user.age_group
     target.cold_sensitivity = user.cold_sensitivity
     target.heat_sensitivity = user.heat_sensitivity

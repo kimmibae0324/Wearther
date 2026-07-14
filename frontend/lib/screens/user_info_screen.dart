@@ -29,16 +29,16 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   final List<int> sensitivityOptions = [0, 25, 50, 75, 100];
 
   String get apiBaseUrl {
-  if (kIsWeb) {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8001';
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8001';
+    }
+
     return 'http://127.0.0.1:8001';
   }
-
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:8001';
-  }
-
-  return 'http://127.0.0.1:8001';
-}
 
   @override
   void initState() {
@@ -114,6 +114,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       Uri.parse('$apiBaseUrl/user/register'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
+        "nickname": nicknameController.text.trim(),
         "age_group": selectedAge,
         "cold_sensitivity": coldSensitivity,
         "heat_sensitivity": heatSensitivity,
@@ -131,6 +132,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "user_id": userId,
+        "nickname": nicknameController.text.trim(),
         "age_group": selectedAge,
         "cold_sensitivity": coldSensitivity,
         "heat_sensitivity": heatSensitivity,
@@ -286,10 +288,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                                     builder: (context) => HomeScreen(
                                       userId: userId!,
                                       age: selectedAge,
-                                      coldLevel:
-                                          _sensitivityLabel(coldSensitivity),
-                                      heatLevel:
-                                          _sensitivityLabel(heatSensitivity),
+                                      coldLevel: _sensitivityLabel(
+                                        coldSensitivity,
+                                      ),
+                                      heatLevel: _sensitivityLabel(
+                                        heatSensitivity,
+                                      ),
                                     ),
                                   ),
                                 );

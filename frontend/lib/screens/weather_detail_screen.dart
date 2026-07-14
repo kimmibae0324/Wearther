@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_flutter/lucide_flutter.dart'; // 날씨아이콘(눈,비)
 
 class WeatherDetailScreen extends StatelessWidget {
   const WeatherDetailScreen({
@@ -34,8 +35,8 @@ class WeatherDetailScreen extends StatelessWidget {
   static const Color borderViolet = Color(0xFFE2D9F0);
 
   IconData getWeatherIcon(String value) {
-    if (value.contains('비')) return Icons.umbrella_rounded;
-    if (value.contains('눈')) return Icons.ac_unit_rounded;
+    if (value.contains('비')) return LucideIcons.cloudRain;
+    if (value.contains('눈')) return LucideIcons.cloudSnow;
     if (value.contains('구름')) return Icons.cloud_rounded;
     if (value.contains('흐림')) return Icons.cloud_rounded;
     return Icons.wb_sunny_rounded;
