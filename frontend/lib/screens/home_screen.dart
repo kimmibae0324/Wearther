@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int humidity = 0;
   String recommendedOutfit = "";
   String weather = '';
-  String dust = '나쁨';
+  String dust = '보통';
   String characterState = '보통_무표정';
   List<Map<String, dynamic>> futureForecast = []; //실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // [추가됨] 주간예보를 위한 코드
@@ -776,7 +776,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
+                    builder: (context) => SettingsScreen(userId: widget.userId),
                   ),
                 );
               },

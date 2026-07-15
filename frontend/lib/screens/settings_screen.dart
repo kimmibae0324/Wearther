@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'user_info_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final int userId;
+
+  const SettingsScreen({super.key, required this.userId});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -380,6 +385,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  String get apiBaseUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8001';
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8001';
+    }
+
+    return 'http://127.0.0.1:8001';
+  }
+
+  Future<void> sendFeedback(int userId, String feedback) async {
+    await http.post(
+      Uri.parse('$apiBaseUrl/user/feedback'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"user_id": userId, "user_feedback": feedback}),
+    );
+  }
+
   void _showFeedbackDialog() {
     final TextEditingController feedbackController = TextEditingController();
 
@@ -512,7 +537,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: SizedBox(
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
+                              final feedback = feedbackController.text.trim();
+
+                              if (feedback.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('피드백을 입력해주세요.')),
+                                );
+                                return;
+                              }
+
+                              await sendFeedback(widget.userId, feedback);
+
                               Navigator.pop(dialogContext);
 
                               ScaffoldMessenger.of(context).showSnackBar(
