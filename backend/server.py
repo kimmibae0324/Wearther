@@ -29,8 +29,8 @@ NCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSr
 FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
 
 # OpenWeatherMap API
-OWM_API_KEY = '7335d6deae8c0ee7826b672c743ed72a'
-LAT, LON = 37.5636, 127.0032
+own_api_key = '7335d6deae8c0ee7826b672c743ed72a'
+lat, lon = 37.5636, 127.0032
 
 # 하늘 상태 딕셔너리
 SKY_MAP = {
@@ -66,10 +66,13 @@ def get_sky(fcst_items):
     return sky
 
 # 미세먼지 API 등급 4단계 세분화 함수
-def get_pm10_info(lat, lon, api_key):
-    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_key}"
+def get_pm10_info(lat, lon, own_api_key):
+    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={own_api_key}"
     try:
         res = requests.get(url, timeout=5).json()
+        print("=== OpenWeather 응답 ===")
+        print(res)
+        
         pm10 = res['list'][0]['components']['pm10']
         
         # 4단계 세분화 (좋음/보통/나쁨/매우나쁨)
@@ -82,6 +85,7 @@ def get_pm10_info(lat, lon, api_key):
         else:
             grade = "매우나쁨"
         return pm10, grade
+    
     except Exception as e:
         print("⚠️ 미세먼지 API 호출 실패:", e)
         return 0.0, "보통"
@@ -156,7 +160,7 @@ def auto_fetch_and_save_weather():
         else:
             rain_gear = get_rain_gear(pop_prob)
             
-        pm10, pm10_grade = get_pm10_info(LAT, LON, OWM_API_KEY)
+        pm10, pm10_grade = get_pm10_info(lat, lon, own_api_key)
         
 
         # 기온/습도에 따른 캐릭터 표정 자동 판별 (나중에 OUTFIT_RULES와 연동할 부분!)

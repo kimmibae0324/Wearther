@@ -1,4 +1,4 @@
-#main.py: 사용자 정보 조회, WeatherLog 조회, JSON 반환 역할
+#main.py: 사용자 정보 조회/수정, WeatherLog 조회, JSON 반환 역할
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -67,6 +67,10 @@ class UserUpdate(BaseModel):
     age_group: str
     cold_sensitivity: int
     heat_sensitivity: int
+
+class FeedbackUpdate(BaseModel):
+    user_id: int
+    user_feedback: str
 
 
 # --- 2. DB 세션 의존성 주입 함수 ---
@@ -467,6 +471,29 @@ def update_user(user: UserUpdate, db: Session = Depends(get_db)):
         "status": "success"
     }
 
+
+@app.post("/user/feedback")
+def save_feedback(data: FeedbackUpdate, db: Session = Depends(get_db)):
+
+    target = (
+        db.query(models.User)
+        .filter(models.User.user_id == data.user_id)
+        .first()
+    )
+
+    if target is None:
+        return {
+            "status": "error",
+            "message": "기록을 찾을 수 없습니다."
+        }
+
+    target.user_feedback = data.user_feedback
+
+    db.commit()
+
+    return {
+        "status": "success"
+    }
 
 
 # --- 3. 핵심 API 엔드포인트 ---
