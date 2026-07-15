@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'user_info_screen.dart';
+<<<<<<< HEAD
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+=======
+import 'package:shared_preferences/shared_preferences.dart';
+>>>>>>> 9203642cb738ed838fb46169cbf9bd9ab9ca29f1
 
 class SettingsScreen extends StatefulWidget {
   final int userId;
@@ -21,6 +25,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const Color borderViolet = Color(0xFFE2D9F0);
 
   bool isAlarmOn = true;
+
+  static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn';
+
+@override
+void initState() {
+  super.initState();
+  _loadUmbrellaAlarmSetting();
+}
+
+Future<void> _loadUmbrellaAlarmSetting() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    isAlarmOn = prefs.getBool(umbrellaAlarmKey) ?? true;
+  });
+}
+
+Future<void> _saveUmbrellaAlarmSetting(bool value) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(umbrellaAlarmKey, value);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '시간대별 알림',
+                  '우산 알림',
                   style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
@@ -136,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  '오늘의 옷차림을 알려드려요',
+                  '비 예보가 있으면 알려드려요',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -215,7 +240,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               _showSimpleDialog(
                 title: 'Wearther',
-                message: '날씨와 사용자 정보를 바탕으로 옷차림을 추천해주는 앱이에요.',
+                message:
+                    'Wearther는 현재 날씨와 사용자의 더위·추위 민감도를 반영해\n'
+                    '오늘 입기 좋은 옷차림을 추천해주는 날씨 기반 스타일 추천 앱입니다.\n\n'
+                    '캐릭터 수룡이를 통해 날씨 상태를 직관적으로 보여주고,\n'
+                    '홈 화면 위젯으로 앱을 열지 않아도 추천 옷차림과 기온을 확인할 수 있습니다.\n\n'
+                    '제작자\n'
+                    '김미배 · 김서빈 · 정세원\n\n'
+                    '제작년월\n'
+                    '2026년 6~7월',
               );
             },
           ),

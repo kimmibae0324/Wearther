@@ -9,6 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/notification_service.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -48,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String characterState = '보통_무표정';
   List<Map<String, dynamic>> futureForecast = []; //실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // [추가됨] 주간예보를 위한 코드
+  static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn';
+  static const String lastUmbrellaAlertKey = 'lastUmbrellaAlertSignature';
 
   //안드로이드 에퓰레이터용 api 주소 변환 함수
   String get apiBaseUrl {
@@ -108,6 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         await updateAndroidHomeWidget(); // 안드로이드 홈 위젯 업데이트
 
+        final umbrellaAlert =
+          data['umbrella_alert'] ?? data['current_weather']?['umbrella_alert'];
+
+        await handleUmbrellaAlert(umbrellaAlert);
+
         print(futureForecast);
       } else {
         print('API 오류: ${response.statusCode}');
@@ -116,6 +126,89 @@ class _HomeScreenState extends State<HomeScreen> {
       print('오류: $e');
     }
   }
+
+  Future<void> handleUmbrellaAlert(dynamic umbrellaAlert) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final isUmbrellaAlarmOn = prefs.getBool(umbrellaAlarmKey) ?? true;
+
+  if (!isUmbrellaAlarmOn) {
+    await NotificationService.cancelUmbrellaNotification();
+    return;
+  }
+
+  if (umbrellaAlert == null || umbrellaAlert is! Map) {
+    return;
+  }
+
+  final shouldAlert = umbrellaAlert['should_alert'] == true;
+
+  if (!shouldAlert) {
+    await NotificationService.cancelUmbrellaNotification();
+    return;
+  }
+
+  final rainTime = (umbrellaAlert['rain_time'] ?? '').toString();
+  final rainProbability = umbrellaAlert['rain_probability'];
+  final serverMessage = (umbrellaAlert['message'] ?? '').toString();
+
+  final message = serverMessage.isNotEmpty
+      ? serverMessage
+      : '$rainTime에 비가 올 가능성이 높아요. 우산을 챙겨주세요!';
+
+  final alertSignature = '$rainTime-$rainProbability-$message';
+
+  if (prefs.getString(lastUmbrellaAlertKey) == alertSignature) {
+    return;
+  }
+
+  await prefs.setString(lastUmbrellaAlertKey, alertSignature);
+
+  final scheduledTime = getUmbrellaNotificationTime(rainTime);
+
+  if (scheduledTime == null ||
+      scheduledTime.isBefore(DateTime.now().add(const Duration(minutes: 1)))) {
+    await NotificationService.showUmbrellaNotificationNow(message: message);
+    return;
+  }
+
+  await NotificationService.scheduleUmbrellaNotification(
+    scheduledTime: scheduledTime,
+    message: message,
+  );
+}
+
+DateTime? getUmbrellaNotificationTime(String rainTime) {
+  final timeRegExp = RegExp(r'^\d{1,2}:\d{2}$');
+
+  if (!timeRegExp.hasMatch(rainTime)) {
+    return null;
+  }
+
+  final parts = rainTime.split(':');
+  final hour = int.tryParse(parts[0]);
+  final minute = int.tryParse(parts[1]);
+
+  if (hour == null || minute == null) {
+    return null;
+  }
+
+  final now = DateTime.now();
+
+  var rainDateTime = DateTime(
+    now.year,
+    now.month,
+    now.day,
+    hour,
+    minute,
+  );
+
+  if (rainDateTime.isBefore(now)) {
+    rainDateTime = rainDateTime.add(const Duration(days: 1));
+  }
+
+  return rainDateTime.subtract(const Duration(hours: 1));
+}
 
   //위젯용 변환 함수
   String get widgetFaceEmoji {
