@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'user_info_screen.dart';
-<<<<<<< HEAD
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-=======
 import 'package:shared_preferences/shared_preferences.dart';
->>>>>>> 9203642cb738ed838fb46169cbf9bd9ab9ca29f1
 
 class SettingsScreen extends StatefulWidget {
   final int userId;
@@ -28,24 +25,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn';
 
-@override
-void initState() {
-  super.initState();
-  _loadUmbrellaAlarmSetting();
-}
+  @override
+  void initState() {
+    super.initState();
+    _loadUmbrellaAlarmSetting();
+  }
 
-Future<void> _loadUmbrellaAlarmSetting() async {
-  final prefs = await SharedPreferences.getInstance();
+  Future<void> _loadUmbrellaAlarmSetting() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  setState(() {
-    isAlarmOn = prefs.getBool(umbrellaAlarmKey) ?? true;
-  });
-}
+    setState(() {
+      isAlarmOn = prefs.getBool(umbrellaAlarmKey) ?? true;
+    });
+  }
 
-Future<void> _saveUmbrellaAlarmSetting(bool value) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(umbrellaAlarmKey, value);
-}
+  Future<void> _saveUmbrellaAlarmSetting(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(umbrellaAlarmKey, value);
+  }
 
   @override
   Widget build(BuildContext context) {
