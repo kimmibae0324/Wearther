@@ -1,4 +1,4 @@
-#main.py: 사용자 정보 조회/수정, WeatherLog 조회, JSON 반환 역할
+#main.py: 사용자 정보 조회, WeatherLog 조회, JSON 반환 역할
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -42,20 +42,66 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+import math
+
 # --- 1. Pydantic 스키마 (Flutter에서 받을 데이터 구조) ---
 class LocationRequest(BaseModel):
     user_id: int
-    #latitude: float
-    #longitude: float
+    latitude: float = 37.5665   # ⭐ 기본값 추가 (서울 위도)
+    longitude: float = 126.9780 # ⭐ 기본값 추가 (서울 경도)
+# 2. GPS 위경도 -> 기상청 격자(NX, NY) 변환 공식 추가
+def map_to_grid(lat, lon):
+    RE, GRID, SLAT1, SLAT2, OLON, OLAT, XO, YO = 6371.00877, 5.0, 30.0, 60.0, 126.0, 38.0, 43, 136
+    DEGRAD = math.pi / 180.0
+    
+    re = RE / GRID
+    slat1, slat2 = SLAT1 * DEGRAD, SLAT2 * DEGRAD
+    olon, olat = OLON * DEGRAD, OLAT * DEGRAD
+    
+    sn = math.tan(math.pi * 0.25 + slat2 * 0.5) / math.tan(math.pi * 0.25 + slat1 * 0.5)
+    sn = math.log(math.cos(slat1) / math.cos(slat2)) / math.log(sn)
+    sf = math.tan(math.pi * 0.25 + slat1 * 0.5)
+    sf = math.pow(sf, sn) * math.cos(slat1) / sn
+    ro = math.tan(math.pi * 0.25 + olat * 0.5)
+    ro = re * sf / math.pow(ro, sn)
+    
+    ra = math.tan(math.pi * 0.25 + (lat * DEGRAD) * 0.5)
+    ra = re * sf / math.pow(ra, sn)
+    theta = lon * DEGRAD - olon
+    if theta > math.pi: theta -= 2.0 * math.pi
+    if theta < -math.pi: theta += 2.0 * math.pi
+    theta *= sn
+    
+    nx = int(math.floor(ra * math.sin(theta) + XO + 0.5))
+    ny = int(math.floor(ro - ra * math.cos(theta) + YO + 0.5))
+    return nx, ny
 
+# ⭐ [추가] 오픈웨더맵 API 키 및 실시간 미세먼지 조회 함수
+OWM_API_KEY = '7335d6deae8c0ee7826b672c743ed72a' # 기존에 사용하시던 API 키
+
+def get_pm10_info(lat, lon):
+    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={OWM_API_KEY}"
+    try:
+        res = requests.get(url, timeout=5).json()
+        pm10 = res['list'][0]['components']['pm10']
+        
+        # 4단계 세분화 등급 변환
+        if pm10 <= 30: grade = "좋음"
+        elif pm10 <= 80: grade = "보통"
+        elif pm10 <= 150: grade = "나쁨"
+        else: grade = "매우나쁨"
+        return float(pm10), grade
+    except Exception as e:
+        print("⚠️ 미세먼지 API 호출 실패:", e)
+        return 0.0, "보통"
+    
 # 회원 등록을 위함
 class UserCreate(BaseModel):
-    nickname: str
     age_group: str
     cold_sensitivity: int
     heat_sensitivity: int
@@ -63,14 +109,9 @@ class UserCreate(BaseModel):
 # 기존 회원 정보 수정할 때 사용
 class UserUpdate(BaseModel):
     user_id: int
-    nickname: str
     age_group: str
     cold_sensitivity: int
     heat_sensitivity: int
-
-class FeedbackUpdate(BaseModel):
-    user_id: int
-    user_feedback: str
 
 
 # --- 2. DB 세션 의존성 주입 함수 ---
@@ -159,7 +200,9 @@ def get_vilage_base():
 
     return now.strftime("%Y%m%d"), base_time
 
+
 VILAGE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
+
 
 # 질문자님의 원본 단기예보(초단기) 로직 100% 그대로 유지!
 def get_future_forecast():
@@ -199,7 +242,7 @@ def get_future_forecast():
             elif category == "SKY":
 
                 forecast_dict[time]["sky"] = SKY_MAP.get(value, "알수없음")
-
+                
         for time, info in forecast_dict.items():
 
             if "temperature" in info:
@@ -429,7 +472,6 @@ def get_short_forecast(current_temp):
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = models.User(
-        nickname=user.nickname,
         age_group=user.age_group,
         cold_sensitivity=user.cold_sensitivity,
         heat_sensitivity=user.heat_sensitivity
@@ -460,7 +502,7 @@ def update_user(user: UserUpdate, db: Session = Depends(get_db)):
             "status": "error",
             "message": "사용자를 찾을 수 없습니다."
         }
-    target.nickname = user.nickname
+
     target.age_group = user.age_group
     target.cold_sensitivity = user.cold_sensitivity
     target.heat_sensitivity = user.heat_sensitivity
@@ -471,47 +513,78 @@ def update_user(user: UserUpdate, db: Session = Depends(get_db)):
         "status": "success"
     }
 
+# =====================================================================
+# [3단계 추가] 맞춤형 AI 메시지 생성 및 우산 알림 서비스 함수
+# =====================================================================
+def generate_custom_message(user, weather_data):
+    if user.heat_sensitivity >= 75:
+        sensitivity_text = "더위를 많이 타셔서 다소 후덥지근하게 느낄 수 있어요."
+    elif user.cold_sensitivity >= 75:
+        sensitivity_text = "추위에 민감하신 편이라 제법 쌀쌀하게 느껴질 수 있는 날씨예요."
+    else:
+        sensitivity_text = "활동하기 무난한 체감온도를 보이는 날이에요."
 
-@app.post("/user/feedback")
-def save_feedback(data: FeedbackUpdate, db: Session = Depends(get_db)):
+    sky_str = weather_data.get("sky", "맑음")
+    pm_str = weather_data.get("pm10_grade", "보통(보라)")
+    outfit = weather_data.get("recommended_outfit")
+    rain = weather_data.get("rain_gear", "없음")
 
-    target = (
-        db.query(models.User)
-        .filter(models.User.user_id == data.user_id)
-        .first()
-    )
+    sentence1 = f"오늘은 전체적으로 {sky_str} 하늘에 미세먼지는 {pm_str} 수준이며, {sensitivity_text}"
+    
+    if rain != "필요없음" and rain != "없음":
+        sentence2 = f"이런 날씨에는 체온 조절에 알맞은 **{outfit}** 차림을 가장 추천해요."
+        sentence3 = f"또한 갑작스러운 강수에 대비해 외출 시 **{rain}**도 꼭 챙겨주세요!"
+        return f"{sentence1} {sentence2} {sentence3}"
+    else:
+        sentence2 = f"오늘 같은 날에는 편안하고 쾌적하게 입을 수 있는 **{outfit}** 차림을 추천해요!"
+        return f"{sentence1} {sentence2}"
 
-    if target is None:
+
+def check_umbrella_alert(pop_prob, user_id, db: Session):
+    if pop_prob >= 70:
+        alert_msg = f"강수확률 {int(pop_prob)}%입니다. 비가 올 것 같으니 우산을 챙기세요!"
+        
+        new_log = models.NotificationLog(
+            user_id=user_id,
+            title="☔ 우산 알림",
+            message=alert_msg,
+            created_at=datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
+        db.add(new_log)
+        db.commit()
+        
         return {
-            "status": "error",
-            "message": "기록을 찾을 수 없습니다."
+            "show_popup": True,
+            "popup_message": alert_msg,
+            "pop_probability": pop_prob
         }
+    
+    return {"show_popup": False, "popup_message": "", "pop_probability": pop_prob}
 
-    target.user_feedback = data.user_feedback
-
-    db.commit()
-
-    return {
-        "status": "success"
-    }
-
-
+# --- 3. 핵심 API 엔드포인트 ---
 # --- 3. 핵심 API 엔드포인트 ---
 @app.post("/weather/custom-info")
 def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
     
     # 1. DB에서 사용자 정보 조회
     user = db.query(models.User).filter(models.User.user_id == request.user_id).first()
-    
     if not user:
         return {"error": "사용자를 찾을 수 없습니다."}
 
-    # 2. DB에서 최신 날씨 조회
+    # 2. GPS 위경도 -> 기상청 격자 좌표(NX, NY)로 변환
+    nx, ny = map_to_grid(request.latitude, request.longitude)
+    print(f"📍 GPS 좌표({request.latitude}, {request.longitude}) -> 기상청 격자({nx}, {ny}) 변환 완료")
+
+    # ⭐ [추가] 앱에서 보낸 실시간 GPS 좌표로 현재 미세먼지 조회!
+    pm10_val, pm10_grade = get_pm10_info(request.latitude, request.longitude)
+    print(f"🌫️ 실시간 미세먼지 조회 완료: {pm10_val}㎍/㎥ ({pm10_grade})")
+    
+    # 3. DB에서 최신 날씨 조회
     latest_weather = (
         db.query(models.WeatherLog)
             .order_by(models.WeatherLog.log_id.desc())
             .first()
-    ) #models.py에 WeatherLog 모델 추가!!
+    )
 
     if latest_weather is None:
         return {
@@ -519,47 +592,52 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
             "message": "날씨 데이터가 없습니다."
         }
     
-    # --- [피드백 반영] 5단계 민감도를 온도 가중치로 변환하여 추천 온도 계산 ---
+# ⭐ [추가] DB에 저장된 옛날 미세먼지 수치를 방금 조회한 실시간 수치로 교체!
+    latest_weather.pm10 = pm10_val
+    latest_weather.pm10_grade = pm10_grade
+
+    # 4. 온도 가중치 변환 및 추천 옷차림 계산
     heat_weight = map_sensitivity(user.heat_sensitivity)
     cold_weight = map_sensitivity(user.cold_sensitivity)
-    recommended_temperature = (
-        latest_weather.temperature
-        + heat_weight
-        - cold_weight
-    )   
+    recommended_temperature = latest_weather.temperature + heat_weight - cold_weight   
     recommended_outfit = recommend_outfit(recommended_temperature) 
-
-    # --- [피드백 반영] 일출/일몰 규칙 가져오기 ---
     sun_times = get_sun_times()
 
-    # 실제로는 httpx나 requests 라이브러리를 이용해 기상청 API를 호출합니다.
-    # weather_data = fetch_kma_weather(request.latitude, request.longitude)
-    weather_data = {"temperature": latest_weather.temperature,
-                    "recommended_temperature": recommended_temperature,
-                    "recommended_outfit": recommended_outfit,
-                    "humidity": latest_weather.humidity,
-                    "sky": latest_weather.sky,
-                    "character_state": latest_weather.character_state,
-                    # 기존 구조를 훼손하지 않고, DB와 규칙에서 가져온 새 정보만 추가!
-                    "pm10": getattr(latest_weather, "pm10", 0.0),
-                    "pm10_grade": getattr(latest_weather, "pm10_grade", "보통(보라)"),
-                    "rain_gear": getattr(latest_weather, "rain_gear", "없음"),
-                    "sunrise": sun_times["sunrise"],
-                    "sunset": sun_times["sunset"]
-    } #실시간 날씨 데이터 불러오기
+    # 날씨 데이터 딕셔너리 구성 (여기에 실시간 미세먼지가 들어갑니다!)
+    weather_data = {
+        "temperature": latest_weather.temperature,
+        "recommended_temperature": recommended_temperature,
+        "recommended_outfit": recommended_outfit,
+        "humidity": latest_weather.humidity,
+        "sky": latest_weather.sky,
+        "character_state": latest_weather.character_state,
+        "pm10": pm10_val,        # ⭐ 실시간 미세먼지 수치 반영
+        "pm10_grade": pm10_grade,  # ⭐ 실시간 미세먼지 등급 반영
+        "rain_gear": getattr(latest_weather, "rain_gear", "없음"),
+        "sunrise": sun_times["sunrise"],
+        "sunset": sun_times["sunset"]
+    }
     
-    # 3. 맞춤형 결과 생성 로직
-    custom_message = "사용자 맞춤 옷차림을 추천합니다."
+    # 5. 맞춤형 메시지 생성 및 DB 저장 (실시간 미세먼지 기반으로 문장이 만들어짐)
+    custom_message = generate_custom_message(user, weather_data)
+    latest_weather.ai_message = custom_message
+    db.commit()
+
+    # 6. 우산 알림 서비스 체크 (강수확률 70% 이상 확인 및 셋로그 DB 저장)
+    pop_prob = float(latest_weather.pop) if hasattr(latest_weather, 'pop') else 0.0
+    umbrella_alert = check_umbrella_alert(pop_prob, user.user_id, db)
+
+    # 7. 예보 데이터 가져오기
     future_forecast = get_future_forecast()
     weekly = get_short_forecast(latest_weather.temperature)
     weekly.extend(get_mid_forecast())
     
-    # 4. Flutter로 JSON 반환
+    # 8. Flutter로 최종 JSON 반환
     return {
         "status": "success",
-        #"user_name": user.name,
         "current_weather": weather_data,
-        "future_forecast": future_forecast, # 기존 단기예보(시간대별) 100% 그대로 유지!
-        "mid_forecast": weekly, # 1일 후 ~ 7일 후 (총 7일치 완벽한 주간 예보)
-        "custom_advice": custom_message
+        "future_forecast": future_forecast,
+        "mid_forecast": weekly,
+        "custom_advice": custom_message,
+        "umbrella_alert": umbrella_alert
     }
