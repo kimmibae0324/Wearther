@@ -1,0 +1,30 @@
+from sqlalchemy import Column, Integer, String, Float
+from database import Base
+
+class User(Base):
+    __tablename__ = "USER"
+    user_id = Column(Integer, primary_key=True, index=True)
+    age_group = Column(String(20))       # ⭐ SQL(VARCHAR)과 일치하도록 String으로 변경!
+    cold_sensitivity = Column(Integer)
+    heat_sensitivity = Column(Integer)
+
+class WeatherLog(Base):
+    __tablename__ = "WEATHER_LOG"
+    log_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer)
+    temperature = Column(Float)
+    humidity = Column(Integer)
+    sky = Column(String(20))
+    character_state = Column(String(50))
+    pm10 = Column(Float, default=0.0)
+    pm10_grade = Column(String(20), default="보통")
+    rain_gear = Column(String(50), default="없음")
+    ai_message = Column(String(500), nullable=True) # ⭐ AI 맞춤 메시지 컬럼
+
+class NotificationLog(Base):
+    __tablename__ = "NOTIFICATION_LOG"
+    log_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer)
+    title = Column(String(100))
+    message = Column(String(255))
+    created_at = Column(String(20))
