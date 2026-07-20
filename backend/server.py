@@ -1,5 +1,4 @@
 #server.py: 현재 날씨 조회, 시간대별 예보 조회, DB 저장
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import contextlib
 
 # 공통 설정
-API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b' # 개인 key 입력!
+API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
 
 DB_CONFIG = {
     "host": "localhost",
@@ -29,7 +28,7 @@ NCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSr
 FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
 
 # OpenWeatherMap API
-own_api_key = '7335d6deae8c0ee7826b672c743ed72a'
+own_api_key = '~~'
 lat, lon = 37.5636, 127.0032
 
 # 하늘 상태 딕셔너리
@@ -177,10 +176,10 @@ def auto_fetch_and_save_weather():
         try:
             with connection.cursor() as cursor:
                 sql = """
-                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade, rain_gear) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade, rain_gear, pop) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
-                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade, rain_gear)) # 임시로 1번 유저로 저장
+                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade, rain_gear, pop_prob)) # 임시로 1번 유저로 저장
             connection.commit() # 진짜로 DB에 도장 쾅!
         finally:
             connection.close()
