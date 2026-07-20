@@ -1,0 +1,59 @@
+-- 1. DB 및 유저 생성 & 권한 부여
+CREATE DATABASE IF NOT EXISTS weather_app_db
+DEFAULT CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+CREATE USER IF NOT EXISTS 'wearther_user'@'localhost' IDENTIFIED BY 'wearther1234';
+ALTER USER 'wearther_user'@'localhost' IDENTIFIED BY 'wearther1234';
+GRANT ALL PRIVILEGES ON weather_app_db.* TO 'wearther_user'@'localhost';
+FLUSH PRIVILEGES;
+
+USE weather_app_db;
+
+-- 2. 사용자 정보 테이블
+CREATE TABLE IF NOT EXISTS `USER` (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    age_group VARCHAR(20) NOT NULL,
+    cold_sensitivity TINYINT NOT NULL,
+    heat_sensitivity TINYINT NOT NULL
+);
+
+-- 3. 날씨 실황 및 AI 추천 메시지 기록 테이블
+CREATE TABLE IF NOT EXISTS WEATHER_LOG (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    temperature FLOAT,
+    humidity INT,
+    sky VARCHAR(20),
+    character_state VARCHAR(50),
+    pm10 FLOAT,                   
+    pm10_grade VARCHAR(20),
+    rain_gear VARCHAR(50) DEFAULT '없음', 
+    ai_message VARCHAR(500) NULL,         
+
+    FOREIGN KEY (user_id) REFERENCES `USER`(user_id)
+);
+
+-- 4. 우산 알림 (셋로그) 기록 테이블
+CREATE TABLE IF NOT EXISTS NOTIFICATION_LOG (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    title VARCHAR(100),
+    message VARCHAR(255),
+    created_at VARCHAR(20)
+);
+
+-- 5. 피드백 테이블
+CREATE TABLE IF NOT EXISTS FEEDBACK (
+    feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    weather_log_id INT,
+    comment VARCHAR(255),
+
+    FOREIGN KEY (user_id) REFERENCES `USER`(user_id),
+    FOREIGN KEY (weather_log_id) REFERENCES WEATHER_LOG(log_id)
+);
+
+-- 외래 키(Foreign Key) 에러 방지를 위한 1번 기본 유저 자동 생성
+INSERT IGNORE INTO `USER` (user_id, age_group, cold_sensitivity, heat_sensitivity) 
+VALUES (1, '20대', 50, 50);
