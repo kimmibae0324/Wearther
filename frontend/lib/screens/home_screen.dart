@@ -2,6 +2,7 @@
 import 'package:lucide_flutter/lucide_flutter.dart'; // 날씨아이콘에 사용
 import 'weather_detail_screen.dart';
 import 'settings_screen.dart';
+import 'dress_up_screen.dart';
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -47,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int humidity = 0;
   String recommendedOutfit = "";
   String weather = '';
-  String dust = '보통';
+  String dust = '나쁨';
   String characterState = '보통_무표정';
   List<Map<String, dynamic>> futureForecast = []; //실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // [추가됨] 주간예보를 위한 코드
@@ -56,16 +57,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //안드로이드 에퓰레이터용 api 주소 변환 함수
   String get apiBaseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8001';
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8001';
-    }
-
+  if (kIsWeb) {
     return 'http://127.0.0.1:8001';
   }
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8001';
+  }
+
+  return 'http://127.0.0.1:8001';
+}
 
   Future<void> fetchWeather() async {
     try {
@@ -97,18 +98,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
           weather = data['current_weather']['sky'];
 
-          dust = data['current_weather']['pm10_grade'];
-
           characterState =
-              (data['current_weather']['character_state'] ?? '보통_무표정')
-                  .toString();
+            (data['current_weather']['character_state'] ?? '보통_무표정')
+                .toString();
 
           futureForecast = List<Map<String, dynamic>>.from(
             data['future_forecast'],
           );
 
           // [추가됨] 백엔드에서 준 주간예보 데이터 저장
-          midForecast = List<Map<String, dynamic>>.from(data['mid_forecast']);
+          midForecast = List<Map<String, dynamic>>.from(
+            data['mid_forecast'],
+          );
         });
 
         await updateAndroidHomeWidget(); // 안드로이드 홈 위젯 업데이트
@@ -127,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  //우산 알림 설정
   Future<void> handleUmbrellaAlert(dynamic umbrellaAlert) async {
   final prefs = await SharedPreferences.getInstance();
 
@@ -231,6 +233,7 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
     }
   }
 
+
   String get widgetOutfitLabel {
     final outfit = recommendedOutfit.trim();
 
@@ -268,10 +271,11 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
 
       default:
         print('매칭 안 된 recommendedOutfit: $recommendedOutfit');
-        return recommendedOutfit.isNotEmpty ? recommendedOutfit : '날씨 맞춤 옷차림';
+        return recommendedOutfit.isNotEmpty
+            ? recommendedOutfit
+            : '날씨 맞춤 옷차림';
     }
   }
-
   Future<void> updateAndroidHomeWidget() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return;
@@ -282,7 +286,10 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
       characterState,
     );
 
-    await HomeWidget.saveWidgetData<String>('widget_face', widgetFaceEmoji);
+    await HomeWidget.saveWidgetData<String>(
+      'widget_face',
+      widgetFaceEmoji,
+    );
 
     await HomeWidget.saveWidgetData<String>(
       'widget_outfit',
@@ -294,13 +301,15 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
       '기온: ${temperature.toStringAsFixed(1)}°C',
     );
 
-    await HomeWidget.saveWidgetData<String>('widget_weather', '날씨: $weather');
+    await HomeWidget.saveWidgetData<String>(
+      'widget_weather',
+      '날씨: $weather',
+    );
 
     await HomeWidget.updateWidget(
       qualifiedAndroidName: 'com.example.wearther.WeartherWidgetProvider',
     );
   }
-
   void _showWeeklyFeedbackDialog() {
     String selectedFeedback = '좋았어요';
 
@@ -547,14 +556,14 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
       case '비':
         return const Icon(
           LucideIcons.cloudRain,
-          color: Color(0xFF6B8DD6),
+          color: Color.fromRGBO(138, 216, 255, 1),
           size: 52,
         );
 
       case '눈':
         return const Icon(
           LucideIcons.cloudSnow,
-          color: Color(0xFF8DBBE8),
+          color: Color(0xFF42A5F5),
           size: 52,
         );
 
@@ -654,16 +663,25 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
 
     // 겨울: 11, 12, 1, 2월 → 07:30 / 17:40
     if (month == 11 || month == 12 || month == 1 || month == 2) {
-      return {'sunrise': 7 * 60 + 30, 'sunset': 17 * 60 + 40};
+      return {
+        'sunrise': 7 * 60 + 30,
+        'sunset': 17 * 60 + 40,
+      };
     }
 
     // 봄/가을: 3, 9, 10월 → 06:30 / 18:20
     if (month == 3 || month == 9 || month == 10) {
-      return {'sunrise': 6 * 60 + 30, 'sunset': 18 * 60 + 20};
+      return {
+        'sunrise': 6 * 60 + 30,
+        'sunset': 18 * 60 + 20,
+      };
     }
 
     // 여름: 4~8월 → 05:20 / 19:40
-    return {'sunrise': 5 * 60 + 20, 'sunset': 19 * 60 + 40};
+    return {
+      'sunrise': 5 * 60 + 20,
+      'sunset': 19 * 60 + 40,
+    };
   }
 
   bool get isDaytime {
@@ -869,7 +887,9 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SettingsScreen(userId: widget.userId),
+                    builder: (context) => SettingsScreen(
+                      userId: widget.userId,
+                    ),
                   ),
                 );
               },
@@ -1121,7 +1141,12 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
 
           // 수정구에서 나오는 마법 말풍선
           if (showBubble)
-            Positioned(right: 118, bottom: 92, child: _buildMagicBubble()),
+            Positioned(
+              right: 118,
+              bottom: 92,
+              child: _buildMagicBubble(),
+            ),
+
           // 수정구 버튼
           Positioned(
             right: 18,
@@ -1135,8 +1160,125 @@ DateTime? getUmbrellaNotificationTime(String rainTime) {
               child: SizedBox(
                 width: 112,
                 height: 112,
-                //수정구
                 child: Image.asset(crystalImagePath, fit: BoxFit.contain),
+              ),
+            ),
+          ),
+
+          // 수룡이 꾸미기 페이지로 가는 문 버튼
+          Positioned(
+            left: 7,
+            bottom: 220,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DressUpScreen(),
+                  ),
+                );
+              },
+              child: SizedBox(
+                width: 80,
+                height: 115,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 문 뒤 그림자
+                    Positioned(
+                      bottom: 5,
+                      left: 18,
+                      child: Container(
+                        width: 54,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+
+                    // 문 본체
+                    Positioned(
+                      bottom: 10,
+                      left: 10,
+                      child: Container(
+                        width: 56,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5FBF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF4E2A78),
+                            width: 2.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(4, 5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // 위쪽 패널
+                    Positioned(
+                      top: 22,
+                      left: 21,
+                      child: Container(
+                        width: 34,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA980D4),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: const Color(0xFF4E2A78),
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 가운데 긴 패널
+                    Positioned(
+                      top: 48,
+                      left: 21,
+                      child: Container(
+                        width: 34,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA980D4),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: const Color(0xFF4E2A78),
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 손잡이
+                    Positioned(
+                      right: 20,
+                      top: 58,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD86B),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF7A4E00),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
