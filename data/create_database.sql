@@ -5,6 +5,7 @@ COLLATE utf8mb4_unicode_ci;
 USE weather_app_db;
 
 -- 개발 중 DB 초기화를 위해 기존 테이블을 삭제 후 재생성
+DROP TABLE IF EXISTS USER_FORTUNE_LOG;
 DROP TABLE IF EXISTS FEEDBACK;
 DROP TABLE IF EXISTS NOTIFICATION_LOG;
 DROP TABLE IF EXISTS WEATHER_LOG;
@@ -62,7 +63,20 @@ CREATE TABLE IF NOT EXISTS FEEDBACK(
         REFERENCES `USER`(user_id) 
 );
 
+-- 포춘쿠키 및 행운 정보 기록 테이블
+CREATE TABLE IF NOT EXISTS USER_FORTUNE_LOG (
+    fortune_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    date VARCHAR(10) NOT NULL,
+    fortune_text TEXT NOT NULL,
+    lucky_color VARCHAR(30) NOT NULL,
+    lucky_place VARCHAR(50) NOT NULL,
+
+    FOREIGN KEY (user_id) 
+        REFERENCES `USER`(user_id)
+);
 
 -- 외래 키(Foreign Key): 에러 방지를 위한 1번 기본 유저 자동 생성
 INSERT IGNORE INTO `USER` (user_id, nickname, age_group, cold_sensitivity, heat_sensitivity)
 VALUES (1, 'example', '20대', 50, 50);
+
