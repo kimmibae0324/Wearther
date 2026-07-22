@@ -42,3 +42,13 @@ class Feedback(Base):
     feedback_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)
     comment = Column(String(255), nullable=False)
+    
+class UserFortuneLog(Base):
+    __tablename__ = "USER_FORTUNE_LOG"
+
+    fortune_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    date = Column(String(10), nullable=False)      # 기록 날짜 (예: "2026-06-23")
+    fortune_text = Column(Text, nullable=False)    # 포춘쿠키 문장
+    lucky_color = Column(String(30), nullable=False) # 행운의 색
+    lucky_place = Column(String(50), nullable=False) # 행운의 장소
