@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `USER` (
     ai_message TEXT
 );
 
+
 -- 날씨 실황 테이블
 CREATE TABLE IF NOT EXISTS WEATHER_LOG (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,8 +29,8 @@ CREATE TABLE IF NOT EXISTS WEATHER_LOG (
     humidity INT,
     sky VARCHAR(20),
     character_state VARCHAR(50),
-    pm10 INT,
-    pm10_grade VARCHAR(20),
+    pm10 FLOAT DEFAULT 0.0,       -- ⭐ INT를 FLOAT DEFAULT 0.0으로 수정했습니다!
+    pm10_grade VARCHAR(20) DEFAULT '보통',
     rain_gear VARCHAR(50) DEFAULT '없음',
     pop INT DEFAULT 0,
 
@@ -66,3 +67,8 @@ CREATE TABLE IF NOT EXISTS FEEDBACK(
 -- 외래 키(Foreign Key): 에러 방지를 위한 1번 기본 유저 자동 생성
 INSERT IGNORE INTO `USER` (user_id, nickname, age_group, cold_sensitivity, heat_sensitivity)
 VALUES (1, 'example', '20대', 50, 50);
+
+CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY 'root';
+ALTER USER 'root'@'127.0.0.1' IDENTIFIED BY 'root';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
