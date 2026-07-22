@@ -7,6 +7,8 @@ import models
 from database import SessionLocal, engine
 import requests 
 from datetime import datetime, timedelta
+import random
+from sqlalchemy import and_
 
 WEEKDAY = ["월", "화", "수", "목", "금", "토", "일"]
 
@@ -117,7 +119,9 @@ class FeedbackCreate(BaseModel):
     user_id: int
     comment: str
 
-
+class FortuneRequest(BaseModel):
+    user_id: int
+    
 # --- 2. DB 세션 의존성 주입 함수 ---
 # 요청이 올 때마다 DB 세션을 열고, 끝나면 닫아주는 안전한 구조입니다.
 def get_db():
@@ -471,6 +475,26 @@ def get_short_forecast(current_temp):
 
     return result
 
+# --- 포춘쿠키 문장, 행운의 색, 장소 풀(Pool) ---
+FORTUNE_MESSAGES = [
+    "작은 성취가 모여 큰 기적을 만듭니다. 오늘 하루 작은 목표를 이뤄보세요!",
+    "생각지도 못한 곳에서 소중한 인연이나 행운을 만날 수 있는 하루예요.",
+    "주변 사람들에게 건넨 따뜻한 말 한마디가 큰 행운으로 돌아올 거예요.",
+    "오늘은 당신이 주인공인 날입니다. 자신감을 갖고 과감하게 도전해보세요!",
+    "여유를 갖고 주변을 둘러보세요. 놓치고 있던 소소한 행복이 기다리고 있어요.",
+    "하고자 마음먹은 일이 있다면 오늘이 바로 그 일을 시작하기 가장 좋은 날입니다."
+]
+
+LUCKY_COLORS = [
+    "레몬 Yellow", "딥 Forest Green", "스카이 Blue", "로즈 Pink", 
+    "라벤더 Purple", "클래식 Navy", "오렌지 Coral", "체리 Red"
+]
+
+LUCKY_PLACES = [
+    "조용한 창가 자리 카페", "햇살이 잘 드는 공원 산책로", "책 냄새 가득한 서점",
+    "탁 트인 전망의 테라스", "포근한 조명의 소품샵", "기분 전환하기 좋은 미술관"
+]
+
 # =====================================================================
 # User API
 # =====================================================================
@@ -522,6 +546,61 @@ def update_user(user: UserUpdate, db: Session = Depends(get_db)):
         "status": "success"
     }
 
+@app.post("/fortune/today")
+def get_today_fortune(request: FortuneRequest, db: Session = Depends(get_db)):
+    # 1. 오늘 날짜 문자열 생성 (예: "2026-06-23")
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # 2. 해당 유저가 오늘 이미 포춘쿠키를 열었는지 확인
+    existing_log = db.query(models.UserFortuneLog).filter(
+        and_(
+            models.UserFortuneLog.user_id == request.user_id,
+            models.UserFortuneLog.date == today_str
+        )
+    ).first()
+
+    # 3. 이미 기록이 있다면 기존 결과를 그대로 반환 (하루 종일 고정!)
+    if existing_log:
+        return {
+            "status": "success",
+            "is_new": False,
+            "fortune": {
+                "fortune_text": existing_log.fortune_text,
+                "lucky_color": existing_log.lucky_color,
+                "lucky_place": existing_log.lucky_place,
+                "date": existing_log.date
+            }
+        }
+
+    # 4. 오늘 첫 접속이라면 풀에서 무작위로 하나씩 추첨
+    selected_fortune = random.choice(FORTUNE_MESSAGES)
+    selected_color = random.choice(LUCKY_COLORS)
+    selected_place = random.choice(LUCKY_PLACES)
+
+    # 5. DB에 오늘 날짜로 저장 (캐싱)
+    new_fortune_log = models.UserFortuneLog(
+        user_id=request.user_id,
+        date=today_str,
+        fortune_text=selected_fortune,
+        lucky_color=selected_color,
+        lucky_place=selected_place
+    )
+    db.add(new_fortune_log)
+    db.commit()
+    db.refresh(new_fortune_log)
+
+    # 6. 결과 반환
+    return {
+        "status": "success",
+        "is_new": True,
+        "fortune": {
+            "fortune_text": selected_fortune,
+            "lucky_color": selected_color,
+            "lucky_place": selected_place,
+            "date": today_str
+        }
+    }
+    
 # =====================================================================
 # Feedback API
 # =====================================================================
