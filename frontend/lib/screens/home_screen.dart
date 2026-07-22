@@ -55,7 +55,85 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> midForecast = []; // 주간예보를 위한 코드
   static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn'; //[cite: 1]
   static const String lastUmbrellaAlertKey = 'lastUmbrellaAlertSignature'; //[cite: 1]
+  // --- [추가] 포춘쿠키 관련 변수 ---
+  String fortuneText = "포춘쿠키를 열어보세요!";
+  String luckyColor = "-";
+  String luckyPlace = "-";
+  bool isFortuneLoaded = false;
 
+  // --- [추가] 포춘쿠키 API 호출 함수 ---
+Future<void> fetchFortune() async {
+  try {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/fortune/today'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': widget.userId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final fortune = data['fortune'];
+      setState(() {
+        fortuneText = fortune['fortune_text'];
+        luckyColor = fortune['lucky_color'];
+        luckyPlace = fortune['lucky_place'];
+      });
+
+      // 수정구를 누를 때처럼 팝업창(말풍선 형태)으로 오늘의 운세 띄우기
+      _showFortuneDialog();
+    }
+  } catch (e) {
+    print('포춘쿠키 불러오기 오류: $e');
+  }
+}
+
+void _showFortuneDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: const [
+            Text('🥠🍀', style: TextStyle(fontSize: 24)),
+            SizedBox(width: 8),
+            Text('오늘의 포춘쿠키', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E2440))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3EFFA),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                fortuneText,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.4, color: Color(0xFF2E2440)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('🎨 행운의 색: $luckyColor', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF582F82))),
+            const SizedBox(height: 6),
+            Text('📍 행운의 장소: $luckyPlace', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF582F82))),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인', style: TextStyle(color: Color(0xFF582F82), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      );
+    },
+  );
+}
   // 안드로이드 에뮬레이터용 api 주소 변환 함수
   String get apiBaseUrl {
     if (kIsWeb) {
@@ -730,10 +808,41 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Row(
           children: [
-            // 새로고침 버튼
+            // 1. [추가] 포춘쿠키 & 네잎클로버 버튼 (새로고침 왼쪽에 배치)
+            GestureDetector(
+              onTap: fetchFortune, // 터치 시 오늘의 포춘쿠키 API 호출 및 팝업 띄움
+              child: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: isNight
+                      ? Colors.white.withOpacity(0.92)
+                      : Colors.white.withOpacity(0.86),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isNight ? 0.18 : 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    '🥠',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // 2. 새로고침 버튼 (원본 기능 유지)
             GestureDetector(
               onTap: () async {
-                await fetchWeather();
+                await fetchWeather(); // 최신 날씨 및 GPS 정보 갱신
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -766,8 +875,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
-            // 설정 버튼 (userId 전달 유지[cite: 1])
+
+            // 3. 설정 버튼 (원본 기능 유지)
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -807,6 +918,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+
 
   Widget _buildWeatherCard() {
     return GestureDetector(
