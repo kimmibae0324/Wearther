@@ -52,6 +52,57 @@ class _DressUpScreenState extends State<DressUpScreen> {
     });
   }
 
+  void resetItems() {
+    setState(() {
+      selectedItemsByCategory.clear();
+    });
+  }
+  void completeDressUp() {
+    final outfitText = selectedItemsByCategory.isEmpty
+        ? '아직 선택한 아이템이 없어요.'
+        : selectedItemsByCategory.values.join(' · ');
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            '수룡이 스타일 완성!',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: sungshinViolet,
+            ),
+          ),
+          content: Text(
+            outfitText,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: textDark,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: sungshinViolet,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bg = backgrounds[selectedBackgroundIndex];
@@ -250,9 +301,9 @@ class _DressUpScreenState extends State<DressUpScreen> {
             bottom: 14,
             left: 95,
             child: _buildClothItem(
-              icon: Icons.shopping_bag_rounded,
-              label: '가방',
-              category: '악세사리',
+              icon: Icons.short_text_rounded,
+              label: '반바지',
+              category: '하의',
             ),
           ),
           Positioned(
@@ -288,6 +339,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
                 label: item['label']!,
               );
             },
+
             builder: (context, candidateData, rejectedData) {
               final bool isHovering = candidateData.isNotEmpty;
 
@@ -425,13 +477,85 @@ class _DressUpScreenState extends State<DressUpScreen> {
     );
   }
 
+  Widget _buildWearingPreview() {
+    if (selectedItemsByCategory.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 82,
+      child: IgnorePointer(
+        child: Column(
+          children: [
+            if (selectedItemsByCategory['상의'] != null)
+              _buildWearingTag(
+                category: '상의',
+                label: selectedItemsByCategory['상의']!,
+              ),
+            if (selectedItemsByCategory['하의'] != null)
+              _buildWearingTag(
+                category: '하의',
+                label: selectedItemsByCategory['하의']!,
+              ),
+            if (selectedItemsByCategory['신발'] != null)
+              _buildWearingTag(
+                category: '신발',
+                label: selectedItemsByCategory['신발']!,
+              ),
+            if (selectedItemsByCategory['악세사리'] != null)
+              _buildWearingTag(
+                category: '악세사리',
+                label: selectedItemsByCategory['악세사리']!,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWearingTag({
+    required String category,
+    required String label,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.86),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: sungshinViolet.withOpacity(0.18),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: sungshinViolet.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Text(
+        '$category · $label',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: sungshinViolet,
+        ),
+      ),
+    );
+  }
   Widget _buildSelectedItemBox() {
+    final bool hasSelectedItems = selectedItemsByCategory.isNotEmpty;
+
     return Positioned(
       left: 28,
       right: 28,
       bottom: 110,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(24),
@@ -439,22 +563,104 @@ class _DressUpScreenState extends State<DressUpScreen> {
             color: sungshinViolet.withOpacity(0.12),
             width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: sungshinViolet.withOpacity(0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Text(
-          selectedItemText,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: sungshinViolet,
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                selectedItemText,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: sungshinViolet,
+                ),
+              ),
+            ),
+
+            if (hasSelectedItems) ...[
+              const SizedBox(width: 8),
+
+              GestureDetector(
+                onTap: resetItems,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3EFFA),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.refresh_rounded,
+                        size: 16,
+                        color: sungshinViolet,
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        '다시',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: sungshinViolet,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 6),
+
+              GestureDetector(
+                onTap: completeDressUp,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: sungshinViolet,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        '완료',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
-
   Widget _buildBottomBackgroundButtons() {
     return Positioned(
       left: 22,
