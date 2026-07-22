@@ -15,7 +15,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
   int selectedBackgroundIndex = 0;
   bool isBgmOn = false;
 
-  final Set<String> selectedItems = {};
+  final Map<String, String> selectedItemsByCategory = {};
 
   final List<List<Color>> backgrounds = const [
     [Color(0xFFFFD9EC), Color(0xFFFFF6FB)],
@@ -24,20 +24,31 @@ class _DressUpScreenState extends State<DressUpScreen> {
   ];
 
   String get selectedItemText {
-    if (selectedItems.isEmpty) {
+    if (selectedItemsByCategory.isEmpty) {
       return '아이템을 골라 수룡이를 꾸며보세요!';
     }
 
-    return selectedItems.join(' · ');
+    return selectedItemsByCategory.values.join(' · ');
   }
 
-  void toggleItem(String label) {
+  void toggleItem({
+    required String category,
+    required String label,
+  }) {
     setState(() {
-      if (selectedItems.contains(label)) {
-        selectedItems.remove(label);
+      if (selectedItemsByCategory[category] == label) {
+        selectedItemsByCategory.remove(category);
       } else {
-        selectedItems.add(label);
+        selectedItemsByCategory[category] = label;
       }
+    });
+  }
+  void wearItem({
+  required String category,
+  required String label,
+  }) {
+    setState(() {
+      selectedItemsByCategory[category] = label;
     });
   }
 
@@ -185,25 +196,28 @@ class _DressUpScreenState extends State<DressUpScreen> {
             top: 26,
             left: 24,
             child: _buildClothItem(
-              icon: Icons.checkroom_rounded,
-              label: '나시',
-            ),
+                    icon: Icons.checkroom_rounded,
+                    label: '나시',
+                    category: '상의',
+                  ),
           ),
           Positioned(
             top: 112,
             left: 16,
             child: _buildClothItem(
-              icon: Icons.dry_cleaning_rounded,
-              label: '반팔',
-            ),
+                icon: Icons.dry_cleaning_rounded,
+                label: '반팔',
+                category: '상의',
+              ),
           ),
           Positioned(
             bottom: 88,
             left: 30,
             child: _buildClothItem(
-              icon: Icons.water_drop_rounded,
-              label: '장화',
-            ),
+                icon: Icons.water_drop_rounded,
+                label: '장화',
+                category: '신발',
+              ),
           ),
           Positioned(
             top: 24,
@@ -211,15 +225,17 @@ class _DressUpScreenState extends State<DressUpScreen> {
             child: _buildClothItem(
               icon: Icons.wb_sunny_rounded,
               label: '선글라스',
+              category: '악세사리',
             ),
           ),
           Positioned(
             top: 112,
             right: 18,
             child: _buildClothItem(
-              icon: Icons.sports_baseball_rounded,
-              label: '모자',
-            ),
+                icon: Icons.sports_baseball_rounded,
+                label: '모자',
+                category: '악세사리',
+              ),
           ),
           Positioned(
             bottom: 88,
@@ -227,6 +243,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
             child: _buildClothItem(
               icon: Icons.style_rounded,
               label: '치마',
+              category: '하의',
             ),
           ),
           Positioned(
@@ -235,6 +252,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
             child: _buildClothItem(
               icon: Icons.shopping_bag_rounded,
               label: '가방',
+              category: '악세사리',
             ),
           ),
           Positioned(
@@ -243,11 +261,12 @@ class _DressUpScreenState extends State<DressUpScreen> {
             child: _buildClothItem(
               icon: Icons.snowshoeing_rounded,
               label: '신발',
+              category: '신발',
             ),
           ),
 
           Positioned(
-            bottom: 8,
+            bottom: 45,
             child: Container(
               width: 255,
               height: 315,
@@ -258,37 +277,67 @@ class _DressUpScreenState extends State<DressUpScreen> {
             ),
           ),
 
-          Positioned(
-            bottom: 0,
-            child: Image.asset(
-              'assets/characters/dragon_base.png',
-              width: 250,
-              fit: BoxFit.contain,
-            ),
+        Positioned(
+          bottom: 45,
+          child: DragTarget<Map<String, String>>(
+            onAcceptWithDetails: (details) {
+              final item = details.data;
+
+              wearItem(
+                category: item['category']!,
+                label: item['label']!,
+              );
+            },
+            builder: (context, candidateData, rejectedData) {
+              final bool isHovering = candidateData.isNotEmpty;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: EdgeInsets.all(isHovering ? 10 : 0),
+                decoration: BoxDecoration(
+                  color: isHovering
+                      ? Colors.white.withOpacity(0.34)
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                  boxShadow: isHovering
+                      ? [
+                          BoxShadow(
+                            color: sungshinViolet.withOpacity(0.22),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Image.asset(
+                  'assets/characters/dragon_base.png',
+                  width: 235,
+                  fit: BoxFit.contain,
+                ),
+              );
+            },
           ),
+        ),
         ],
       ),
     );
   }
-
   Widget _buildClothItem({
     required IconData icon,
     required String label,
+    required String category,
   }) {
-    final bool isSelected = selectedItems.contains(label);
+    final bool isSelected = selectedItemsByCategory[category] == label;
 
-    return GestureDetector(
-      onTap: () {
-        toggleItem(label);
-      },
-      child: AnimatedContainer(
+    Widget itemCard({bool isDragging = false}) {
+      return AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         width: isSelected ? 82 : 76,
         height: isSelected ? 82 : 76,
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFFFFF0FA)
-              : Colors.white.withOpacity(0.9),
+              : Colors.white.withOpacity(isDragging ? 0.95 : 0.9),
           borderRadius: BorderRadius.circular(26),
           border: Border.all(
             color: isSelected ? sungshinViolet : Colors.white,
@@ -345,6 +394,33 @@ class _DressUpScreenState extends State<DressUpScreen> {
               ),
           ],
         ),
+      );
+    }
+
+    return Draggable<Map<String, String>>(
+      data: {
+        'category': category,
+        'label': label,
+      },
+      feedback: Material(
+        color: Colors.transparent,
+        child: Transform.scale(
+          scale: 1.08,
+          child: itemCard(isDragging: true),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.35,
+        child: itemCard(),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          toggleItem(
+            category: category,
+            label: label,
+          );
+        },
+        child: itemCard(),
       ),
     );
   }
