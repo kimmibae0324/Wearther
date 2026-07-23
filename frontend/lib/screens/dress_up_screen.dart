@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DressUpScreen extends StatefulWidget {
   const DressUpScreen({super.key});
@@ -11,6 +12,26 @@ class _DressUpScreenState extends State<DressUpScreen> {
   static const Color sungshinViolet = Color(0xFF582F82);
   static const Color sungshinBrightViolet = Color(0xFF6B6EB3);
   static const Color textDark = Color(0xFF2E2440);
+
+  @override
+  void initState() {
+    super.initState();
+    loadSavedDressUp();
+  }
+
+  Future<void> loadSavedDressUp() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      selectedItemsByCategory['상의'] = prefs.getString('dressup_top') ?? '';
+      selectedItemsByCategory['하의'] = prefs.getString('dressup_bottom') ?? '';
+      selectedItemsByCategory['신발'] = prefs.getString('dressup_shoes') ?? '';
+      selectedItemsByCategory['모자'] = prefs.getString('dressup_hat') ?? '';
+      selectedItemsByCategory['선글라스'] = prefs.getString('dressup_sunglasses') ?? '';
+
+      selectedItemsByCategory.removeWhere((key, value) => value.isEmpty);
+    });
+  }
 
   int selectedBackgroundIndex = 0;
   bool isBgmOn = false;
@@ -50,6 +71,16 @@ class _DressUpScreenState extends State<DressUpScreen> {
     setState(() {
       selectedItemsByCategory[category] = label;
     });
+  }
+
+  Future<void> saveDressUp() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('dressup_top', selectedItemsByCategory['상의'] ?? '');
+    await prefs.setString('dressup_bottom', selectedItemsByCategory['하의'] ?? '');
+    await prefs.setString('dressup_shoes', selectedItemsByCategory['신발'] ?? '');
+    await prefs.setString('dressup_hat', selectedItemsByCategory['모자'] ?? '');
+    await prefs.setString('dressup_sunglasses', selectedItemsByCategory['선글라스'] ?? '');
   }
 
   void resetItems() {
@@ -206,7 +237,9 @@ Widget _buildWearingLayer({
     ),
   );
 }
-  void completeDressUp() {
+  Future<void> completeDressUp() async {
+    await saveDressUp();
+    
     final outfitText = selectedItemsByCategory.isEmpty
         ? '아직 선택한 아이템이 없어요.'
         : selectedItemsByCategory.values.join(' · ');
@@ -944,7 +977,9 @@ Widget _buildWearingLayer({
               const SizedBox(width: 6),
 
               GestureDetector(
-                onTap: completeDressUp,
+                onTap: () async {
+                  await completeDressUp();
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
