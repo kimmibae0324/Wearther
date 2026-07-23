@@ -28,7 +28,8 @@ class _DressUpScreenState extends State<DressUpScreen> {
       selectedItemsByCategory['신발'] = prefs.getString('dressup_shoes') ?? '';
       selectedItemsByCategory['모자'] = prefs.getString('dressup_hat') ?? '';
       selectedItemsByCategory['선글라스'] = prefs.getString('dressup_sunglasses') ?? '';
-
+      selectedBackgroundIndex = prefs.getInt('dressup_background_index') ?? 0;
+      
       selectedItemsByCategory.removeWhere((key, value) => value.isEmpty);
     });
   }
@@ -43,6 +44,19 @@ class _DressUpScreenState extends State<DressUpScreen> {
     [Color(0xFFD7F1FF), Color(0xFFFFF8E7)],
     [Color(0xFFE7DCFF), Color(0xFFFFF8F0)],
   ];
+
+  String get selectedBackgroundImagePath {
+    switch (selectedBackgroundIndex) {
+      case 0:
+        return 'assets/dressup/background_pink_room.png';
+      case 1:
+        return 'assets/dressup/background_star_stage.png';
+      case 2:
+        return 'assets/dressup/background_summer_beach.png';
+      default:
+        return 'assets/dressup/background_pink_room.png';
+    }
+  }
 
   String get selectedItemText {
     if (selectedItemsByCategory.isEmpty) {
@@ -81,6 +95,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
     await prefs.setString('dressup_shoes', selectedItemsByCategory['신발'] ?? '');
     await prefs.setString('dressup_hat', selectedItemsByCategory['모자'] ?? '');
     await prefs.setString('dressup_sunglasses', selectedItemsByCategory['선글라스'] ?? '');
+    await prefs.setInt('dressup_background_index', selectedBackgroundIndex);
   }
 
   void resetItems() {
@@ -239,7 +254,7 @@ Widget _buildWearingLayer({
 }
   Future<void> completeDressUp() async {
     await saveDressUp();
-    
+
     final outfitText = selectedItemsByCategory.isEmpty
         ? '아직 선택한 아이템이 없어요.'
         : selectedItemsByCategory.values.join(' · ');
@@ -294,10 +309,9 @@ Widget _buildWearingLayer({
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: bg,
+          image: DecorationImage(
+            image: AssetImage(selectedBackgroundImagePath),
+            fit: BoxFit.cover,
           ),
         ),
         child: SafeArea(
@@ -1033,7 +1047,7 @@ Widget _buildWearingLayer({
         child: Row(
           children: [
             Expanded(
-              child: _buildBackgroundButton(0, '핑크룸'),
+              child: _buildBackgroundButton(0, '핑크방'),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1041,7 +1055,7 @@ Widget _buildWearingLayer({
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildBackgroundButton(2, '파니룸'),
+              child: _buildBackgroundButton(2, '무대'),
             ),
           ],
         ),
@@ -1053,10 +1067,13 @@ Widget _buildWearingLayer({
     final bool isSelected = selectedBackgroundIndex == index;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         setState(() {
           selectedBackgroundIndex = index;
         });
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('dressup_background_index', selectedBackgroundIndex);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
