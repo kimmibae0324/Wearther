@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class DressUpScreen extends StatefulWidget {
   const DressUpScreen({super.key});
@@ -16,7 +17,14 @@ class _DressUpScreenState extends State<DressUpScreen> {
   @override
   void initState() {
     super.initState();
+    _bgmPlayer = AudioPlayer();
     loadSavedDressUp();
+  }
+
+  @override
+  void dispose() {
+    _bgmPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> loadSavedDressUp() async {
@@ -34,9 +42,29 @@ class _DressUpScreenState extends State<DressUpScreen> {
     });
   }
 
+  Future<void> toggleBgm() async {
+    if (isBgmOn) {
+      await _bgmPlayer.pause();
+
+      if (!mounted) return;
+      setState(() {
+        isBgmOn = false;
+      });
+    } else {
+      await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
+      await _bgmPlayer.setVolume(0.35);
+      await _bgmPlayer.play(AssetSource('audio/dressup_bgm.mp3'));
+
+      if (!mounted) return;
+      setState(() {
+        isBgmOn = true;
+      });
+    }
+  }
+
   int selectedBackgroundIndex = 0;
   bool isBgmOn = false;
-
+  late final AudioPlayer _bgmPlayer;
   final Map<String, String> selectedItemsByCategory = {};
 
   final List<List<Color>> backgrounds = const [
@@ -363,11 +391,7 @@ Widget _buildWearingLayer({
             ),
           ),
           GestureDetector(
-            onTap: () {
-              setState(() {
-                isBgmOn = !isBgmOn;
-              });
-            },
+            onTap: toggleBgm,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
               decoration: BoxDecoration(
