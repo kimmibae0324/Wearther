@@ -46,17 +46,20 @@ class _DressUpScreenState extends State<DressUpScreen> {
   ];
 
   String get selectedBackgroundImagePath {
-    switch (selectedBackgroundIndex) {
-      case 0:
-        return 'assets/dressup/background_pink_room.png';
-      case 1:
-        return 'assets/dressup/background_star_stage.png';
-      case 2:
-        return 'assets/dressup/background_summer_beach.png';
-      default:
-        return 'assets/dressup/background_pink_room.png';
-    }
+    return backgroundImagePaths[selectedBackgroundIndex];
   }
+
+  final List<String> backgroundLabels = const [
+  '핑크룸',
+  '스테이지',
+  '해변가',
+  ];
+
+  final List<String> backgroundImagePaths = const [
+    'assets/dressup/background_pink_room.png',
+    'assets/dressup/background_star_stage.png',
+    'assets/dressup/background_summer_beach.png',
+  ];
 
   String get selectedItemText {
     if (selectedItemsByCategory.isEmpty) {
@@ -546,7 +549,7 @@ Widget _buildWearingLayer({
 
             // 신발 - 하단
             Positioned(
-              bottom: 8,
+              top:80,
               left: 125,
               child: _buildClothItem(
                 imagePath: 'assets/dressup/shoes_black_high_top.png',
@@ -557,7 +560,7 @@ Widget _buildWearingLayer({
             ),
 
             Positioned(
-              bottom: 8,
+              top:80,
               right: 125,
               child: _buildClothItem(
                 imagePath: 'assets/dressup/shoes_navy_rain_boots.png',
@@ -736,6 +739,88 @@ Widget _buildWearingLayer({
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBackgroundButton(int index) {
+    final bool isSelected = selectedBackgroundIndex == index;
+
+    return GestureDetector(
+      onTap: () async {
+        setState(() {
+          selectedBackgroundIndex = index;
+        });
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('dressup_background_index', selectedBackgroundIndex);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 78,
+        height: 92,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? sungshinViolet : Colors.white,
+            width: isSelected ? 3 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.asset(
+                backgroundImagePaths[index],
+                width: double.infinity,
+                height: 62,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned(
+              bottom: 1,
+              left: 0,
+              right: 0,
+              child: Text(
+                backgroundLabels[index],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? sungshinViolet : Colors.black54,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: sungshinViolet,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 13,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
   Widget _buildClothItem({
@@ -919,7 +1004,7 @@ Widget _buildWearingLayer({
     return Positioned(
       left: 28,
       right: 28,
-      bottom: 110,
+      bottom: 170,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -1047,15 +1132,15 @@ Widget _buildWearingLayer({
         child: Row(
           children: [
             Expanded(
-              child: _buildBackgroundButton(0, '핑크방'),
+              child: _buildBackgroundButton(0),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildBackgroundButton(1, '해변가'),
+              child: _buildBackgroundButton(1),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildBackgroundButton(2, '무대'),
+              child: _buildBackgroundButton(2),
             ),
           ],
         ),
@@ -1063,36 +1148,4 @@ Widget _buildWearingLayer({
     );
   }
 
-  Widget _buildBackgroundButton(int index, String label) {
-    final bool isSelected = selectedBackgroundIndex == index;
-
-    return GestureDetector(
-      onTap: () async {
-        setState(() {
-          selectedBackgroundIndex = index;
-        });
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('dressup_background_index', selectedBackgroundIndex);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 46,
-        decoration: BoxDecoration(
-          color: isSelected ? sungshinViolet : const Color(0xFFF3EFFA),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              color: isSelected ? Colors.white : sungshinViolet,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
