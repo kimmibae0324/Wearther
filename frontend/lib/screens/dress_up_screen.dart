@@ -57,6 +57,155 @@ class _DressUpScreenState extends State<DressUpScreen> {
       selectedItemsByCategory.clear();
     });
   }
+  String? getSelectedImagePath(String category) {
+    final label = selectedItemsByCategory[category];
+
+    switch (label) {
+      case '나시 1':
+        return 'assets/dressup/top_sleeveless_white_lace.png';
+      case '나시 2':
+        return 'assets/dressup/top_sleeveless_pink_stripe.png';
+      case '반팔 1':
+        return 'assets/dressup/top_tshirt_blue_stripe.png';
+      case '반팔 2':
+        return 'assets/dressup/top_tshirt_pink_button.png';
+
+      case '반바지 1':
+        return 'assets/dressup/bottom_shorts_gray_sport.png';
+      case '반바지 2':
+        return 'assets/dressup/bottom_shorts_black_denim.png';
+      case '치마 1':
+        return 'assets/dressup/bottom_skirt_gray_ruffle.png';
+      case '치마 2':
+        return 'assets/dressup/bottom_skirt_denim_mini.png';
+
+      case '신발':
+        return 'assets/dressup/shoes_black_high_top.png';
+      case '장화':
+        return 'assets/dressup/shoes_navy_rain_boots.png';
+
+      case '모자':
+        return 'assets/dressup/accessory_pink_snapback.png';
+      case '선글라스':
+        return 'assets/dressup/accessory_black_sunglasses.png';
+    }
+
+    return null;
+  }
+
+Widget _buildWearingLayer({
+  required String category,
+  required double top,
+  required double width,
+  double height = 80,
+  double offsetX = 0,
+}) {
+  final label = selectedItemsByCategory[category];
+  final imagePath = getSelectedImagePath(category);
+
+  if (imagePath == null || label == null) {
+    return const SizedBox.shrink();
+  }
+
+  double adjustedTop = top;
+  double adjustedWidth = width;
+  double adjustedHeight = height;
+  double adjustedOffsetX = offsetX;
+  double adjustedRotation = 0;
+
+  switch (label) {
+    case '모자':
+      adjustedTop = -4;
+      adjustedWidth = 100;
+      adjustedHeight = 60;
+      break;
+
+    case '선글라스':
+      adjustedTop = 30;
+      adjustedWidth = 78;
+      adjustedHeight = 42;
+      adjustedRotation = -0.08;
+      break;
+
+    case '나시 1':
+      adjustedTop = 66;
+      adjustedWidth = 70;
+      adjustedHeight = 82;
+      break;
+
+    case '나시 2':
+      adjustedTop = 66;
+      adjustedWidth = 72;
+      adjustedHeight = 84;
+      break;
+
+    case '반팔 1':
+      adjustedTop = 70;
+      adjustedWidth = 82;
+      adjustedHeight = 88;
+      break;
+
+    case '반팔 2':
+      adjustedTop = 64;
+      adjustedWidth = 78;
+      adjustedHeight = 86;
+      break;
+
+    case '반바지 1':
+      adjustedTop = 121;
+      adjustedWidth = 90;
+      adjustedHeight = 78;
+      break;
+
+    case '반바지 2':
+      adjustedTop = 121;
+      adjustedWidth = 90;
+      adjustedHeight = 78;
+      break;
+
+    case '치마 1':
+      adjustedTop = 120;
+      adjustedWidth = 76;
+      adjustedHeight = 80;
+      adjustedOffsetX = 0;
+      adjustedRotation =-0.02;
+      break;
+
+    case '치마 2':
+      adjustedTop = 122;
+      adjustedWidth = 88;
+      adjustedHeight = 76;
+      adjustedOffsetX = 0;
+      adjustedRotation = -0.01;
+      break;
+
+    case '신발':
+      adjustedTop = 282;
+      adjustedWidth = 58;
+      adjustedHeight = 44;
+      break;
+
+    case '장화':
+      adjustedTop = 276;
+      adjustedWidth = 62;
+      adjustedHeight = 56;
+      break;
+  }
+
+  return Positioned(
+    top: adjustedTop,
+    left: (235 - adjustedWidth) / 2 + adjustedOffsetX,
+    child: Transform.rotate(
+      angle: adjustedRotation,
+      child: Image.asset(
+        imagePath,
+        width: adjustedWidth,
+        height: adjustedHeight,
+        fit: BoxFit.contain,
+      ),
+    ),
+  );
+}
   void completeDressUp() {
     final outfitText = selectedItemsByCategory.isEmpty
         ? '아직 선택한 아이템이 없어요.'
@@ -243,81 +392,136 @@ class _DressUpScreenState extends State<DressUpScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
-            top: 26,
-            left: 24,
-            child: _buildClothItem(
-                    icon: Icons.checkroom_rounded,
-                    label: '나시',
-                    category: '상의',
-                  ),
-          ),
-          Positioned(
-            top: 112,
-            left: 16,
-            child: _buildClothItem(
-                icon: Icons.dry_cleaning_rounded,
-                label: '반팔',
+            // 악세사리 - 상단
+            Positioned(
+              top: 10,
+              left: 110,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/accessory_pink_snapback.png',
+                label: '모자',
+                category: '모자',
+                size: 66,
+              ),
+            ),
+
+            Positioned(
+              top: 10,
+              right: 110,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/accessory_black_sunglasses.png',
+                label: '선글라스',
+                category: '선글라스',
+                size: 66,
+              ),
+            ),
+
+            // 상의 - 왼쪽
+            Positioned(
+              top: 95,
+              left: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/top_sleeveless_white_lace.png',
+                label: '나시 1',
                 category: '상의',
               ),
-          ),
-          Positioned(
-            bottom: 88,
-            left: 30,
-            child: _buildClothItem(
-                icon: Icons.water_drop_rounded,
+            ),
+
+            Positioned(
+              top: 168,
+              left: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/top_sleeveless_pink_stripe.png',
+                label: '나시 2',
+                category: '상의',
+              ),
+            ),
+
+            Positioned(
+              top: 241,
+              left: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/top_tshirt_blue_stripe.png',
+                label: '반팔 1',
+                category: '상의',
+              ),
+            ),
+
+            Positioned(
+              top: 314,
+              left: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/top_tshirt_pink_button.png',
+                label: '반팔 2',
+                category: '상의',
+              ),
+            ),
+
+            // 하의 - 오른쪽
+            Positioned(
+              top: 95,
+              right: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/bottom_shorts_gray_sport.png',
+                label: '반바지 1',
+                category: '하의',
+              ),
+            ),
+
+            Positioned(
+              top: 168,
+              right: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/bottom_shorts_black_denim.png',
+                label: '반바지 2',
+                category: '하의',
+              ),
+            ),
+
+            Positioned(
+              top: 241,
+              right: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/bottom_skirt_gray_ruffle.png',
+                label: '치마 1',
+                category: '하의',
+              ),
+            ),
+
+            Positioned(
+              top: 314,
+              right: 18,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/bottom_skirt_denim_mini.png',
+                label: '치마 2',
+                category: '하의',
+              ),
+            ),
+
+            // 신발 - 하단
+            Positioned(
+              bottom: 8,
+              left: 125,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/shoes_black_high_top.png',
+                label: '신발',
+                category: '신발',
+                size: 72,
+              ),
+            ),
+
+            Positioned(
+              bottom: 8,
+              right: 125,
+              child: _buildClothItem(
+                imagePath: 'assets/dressup/shoes_navy_rain_boots.png',
                 label: '장화',
                 category: '신발',
+                size: 72,
               ),
-          ),
-          Positioned(
-            top: 24,
-            right: 28,
-            child: _buildClothItem(
-              icon: Icons.wb_sunny_rounded,
-              label: '선글라스',
-              category: '악세사리',
             ),
-          ),
-          Positioned(
-            top: 112,
-            right: 18,
-            child: _buildClothItem(
-                icon: Icons.sports_baseball_rounded,
-                label: '모자',
-                category: '악세사리',
-              ),
-          ),
-          Positioned(
-            bottom: 88,
-            right: 30,
-            child: _buildClothItem(
-              icon: Icons.style_rounded,
-              label: '치마',
-              category: '하의',
-            ),
-          ),
-          Positioned(
-            bottom: 14,
-            left: 95,
-            child: _buildClothItem(
-              icon: Icons.short_text_rounded,
-              label: '반바지',
-              category: '하의',
-            ),
-          ),
-          Positioned(
-            bottom: 14,
-            right: 95,
-            child: _buildClothItem(
-              icon: Icons.snowshoeing_rounded,
-              label: '신발',
-              category: '신발',
-            ),
-          ),
 
           Positioned(
-            bottom: 45,
+            bottom:65,
             child: Container(
               width: 255,
               height: 315,
@@ -329,7 +533,7 @@ class _DressUpScreenState extends State<DressUpScreen> {
           ),
 
         Positioned(
-          bottom: 45,
+          bottom: 65,
           child: DragTarget<Map<String, String>>(
             onAcceptWithDetails: (details) {
               final item = details.data;
@@ -361,11 +565,55 @@ class _DressUpScreenState extends State<DressUpScreen> {
                         ]
                       : [],
                 ),
-                child: Image.asset(
-                  'assets/characters/dragon_base.png',
-                  width: 235,
-                  fit: BoxFit.contain,
-                ),
+                child:SizedBox(
+                        width: 235,
+                        height: 330,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              child: Image.asset(
+                                'assets/dressup/dressup_character_base.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+
+                            // 모자
+                            _buildWearingLayer(
+                              category: '모자',
+                              top: 0,
+                              width: 90,
+                              height: 60,
+                            ),
+
+                            // 선글라스
+                            _buildWearingLayer(
+                              category: '선글라스',
+                              top: 28,
+                              width: 80,
+                              height: 45,
+                            ),
+
+                            // 상의
+                            _buildWearingLayer(
+                              category: '상의',
+                              top: 68,
+                              width: 70,
+                              height: 82,
+                            ),
+
+                            // 하의
+                            _buildWearingLayer(
+                              category: '하의',
+                              top: 120,
+                              width: 73,
+                              height: 78,
+                            ),
+                            //신발
+                            _buildShoeLayers(),
+                          ],
+                        ),
+                      )
               );
             },
           ),
@@ -374,109 +622,180 @@ class _DressUpScreenState extends State<DressUpScreen> {
       ),
     );
   }
+  Widget _buildShoeLayers() {
+    final label = selectedItemsByCategory['신발'];
+
+    if (label == null) {
+      return const SizedBox.shrink();
+    }
+
+    String leftImagePath;
+    String rightImagePath;
+
+    double shoeWidth;
+    double shoeHeight;
+    double shoeTop;
+    double leftX;
+    double rightX;
+
+    if (label == '장화') {
+      leftImagePath = 'assets/dressup/shoes_navy_rain_boots_left.png';
+      rightImagePath = 'assets/dressup/shoes_navy_rain_boots_right.png';
+
+      // 장화용
+      shoeWidth = 55;
+      shoeHeight = 70;
+      shoeTop = 255;
+      leftX = 53;
+      rightX = 51;
+    } else {
+      leftImagePath = 'assets/dressup/shoes_black_high_top_left.png';
+      rightImagePath = 'assets/dressup/shoes_black_high_top_right.png';
+
+      // 운동화용
+      shoeWidth = 55;
+      shoeHeight = 70;
+      shoeTop = 268;
+      leftX = 51;
+      rightX = 51;
+    }
+
+    return Stack(
+      children: [
+        Positioned(
+          top: shoeTop,
+          left: leftX,
+          child: Transform.rotate(
+            angle: 0.03,
+            child: Image.asset(
+              leftImagePath,
+              width: shoeWidth,
+              height: shoeHeight,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        Positioned(
+          top: shoeTop,
+          right: rightX,
+          child: Transform.rotate(
+            angle: -0.03,
+            child: Image.asset(
+              rightImagePath,
+              width: shoeWidth,
+              height: shoeHeight,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
   Widget _buildClothItem({
-    required IconData icon,
+    required String imagePath,
     required String label,
     required String category,
+    double size = 68,
   }) {
     final bool isSelected = selectedItemsByCategory[category] == label;
 
-    Widget itemCard({bool isDragging = false}) {
-      return AnimatedContainer(
+    Widget itemWidget = GestureDetector(
+      onTap: () {
+        toggleItem(
+          category: category,
+          label: label,
+        );
+      },
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: isSelected ? 82 : 76,
-        height: isSelected ? 82 : 76,
+        width: size,
+        height: size,
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFFFF0FA)
-              : Colors.white.withOpacity(isDragging ? 0.95 : 0.9),
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(
-            color: isSelected ? sungshinViolet : Colors.white,
-            width: isSelected ? 2.3 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: sungshinViolet.withOpacity(isSelected ? 0.22 : 0.09),
-              blurRadius: isSelected ? 20 : 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: isSelected
+              ? Border.all(
+                  color: sungshinViolet,
+                  width: 3,
+                )
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: sungshinViolet.withOpacity(0.24),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : [],
         ),
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
             Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    color: sungshinViolet,
-                    size: 29,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: textDark,
-                    ),
-                  ),
-                ],
+              child: Image.asset(
+                imagePath,
+                width: size - 8,
+                height: size - 8,
+                fit: BoxFit.contain,
               ),
             ),
+
             if (isSelected)
               Positioned(
-                top: 6,
-                right: 6,
+                right: -2,
+                top: -2,
                 child: Container(
-                  width: 19,
-                  height: 19,
-                  decoration: const BoxDecoration(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
                     color: sungshinViolet,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: Colors.white,
-                    size: 14,
+                    size: 15,
                   ),
                 ),
               ),
           ],
         ),
-      );
-    }
+      ),
+    );
 
     return Draggable<Map<String, String>>(
       data: {
         'category': category,
         'label': label,
+        'imagePath': imagePath,
       },
       feedback: Material(
         color: Colors.transparent,
-        child: Transform.scale(
-          scale: 1.08,
-          child: itemCard(isDragging: true),
+        child: Opacity(
+          opacity: 0.9,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       ),
       childWhenDragging: Opacity(
         opacity: 0.35,
-        child: itemCard(),
+        child: itemWidget,
       ),
-      child: GestureDetector(
-        onTap: () {
-          toggleItem(
-            category: category,
-            label: label,
-          );
-        },
-        child: itemCard(),
-      ),
+      child: itemWidget,
     );
   }
-
   Widget _buildWearingPreview() {
     if (selectedItemsByCategory.isEmpty) {
       return const SizedBox.shrink();
