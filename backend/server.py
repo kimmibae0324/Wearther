@@ -14,7 +14,7 @@ API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "password", # MySQL 비밀번호 입력!
+    "password": "root", # MySQL 비밀번호 입력!
     "db": "weather_app_db",
     "charset": "utf8mb4"
 }
@@ -27,8 +27,8 @@ NY = 127
 NCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst')
 FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
 
-# OpenWeatherMap API
-own_api_key = '~~'
+# WAQI API
+WAQI_TOKEN = '84b438216347483d144278db7a97f068b1527135'
 lat, lon = 37.5636, 127.0032
 
 # 하늘 상태 딕셔너리
@@ -64,17 +64,29 @@ def get_sky(fcst_items):
 
     return sky
 
-# 미세먼지 API 등급 4단계 세분화 함수
-def get_pm10_info(lat, lon, own_api_key):
-    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={own_api_key}"
+# 미세먼지 API 등급 4단계 세분화 함수 (⭐ 에러 방지 코드 추가 및 timeout 15초로 변경)
+def get_pm10_info(lat, lon): # server.py의 경우 def get_pm10_info(lat, lon, WAQI_TOKEN):
+    # WAQI 위경도 검색 API 주소
+    url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_TOKEN}"
+    
     try:
-        res = requests.get(url, timeout=5).json()
-        print("=== OpenWeather 응답 ===")
-        print(res)
+        res = requests.get(url, timeout=15).json()
         
-        pm10 = res['list'][0]['components']['pm10']
+        # 응답 상태가 'ok'가 아니면 에러로 간주
+        if res.get('status') != 'ok':
+            print(f"⚠️ WAQI 미세먼지 API 에러: {res}")
+            return 0.0, "보통"
+            
+        # 미세먼지(pm10) 수치 추출
+        # 측정소에 따라 pm10 데이터가 누락된 경우를 대비해 get() 사용
+        pm10_data = res['data']['iaqi'].get('pm10')
         
-        # 4단계 세분화 (좋음/보통/나쁨/매우나쁨)
+        if pm10_data is None:
+            return 0.0, "보통"
+            
+        pm10 = float(pm10_data['v'])
+        
+        # 한국 미세먼지 등급 기준 적용
         if pm10 <= 30:
             grade = "좋음"
         elif pm10 <= 80:
@@ -83,10 +95,11 @@ def get_pm10_info(lat, lon, own_api_key):
             grade = "나쁨"
         else:
             grade = "매우나쁨"
+            
         return pm10, grade
-    
+        
     except Exception as e:
-        print("⚠️ 미세먼지 API 호출 실패:", e)
+        print(f"⚠️ 미세먼지 API 호출 실패: {e}")
         return 0.0, "보통"
 
 # 강수확률 기반 우비/우산 추천 함수
@@ -116,7 +129,8 @@ def auto_fetch_and_save_weather():
     }
     
     try:
-        response = requests.get(NCST_URL, params=params, timeout=5)
+        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
+        response = requests.get(NCST_URL, params=params, timeout=15)
         items = response.json()['response']['body']['items']['item']
         
         temp = 0.0
@@ -139,7 +153,8 @@ def auto_fetch_and_save_weather():
             'ny': NY
         }
 
-        fcst_response = requests.get(FCST_URL, params=fcst_params, timeout=5)
+        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
+        fcst_response = requests.get(FCST_URL, params=fcst_params, timeout=15)
         fcst_items = fcst_response.json()['response']['body']['items']['item']
 
         sky = get_sky(fcst_items)
@@ -159,7 +174,8 @@ def auto_fetch_and_save_weather():
         else:
             rain_gear = get_rain_gear(pop_prob)
             
-        pm10, pm10_grade = get_pm10_info(lat, lon, own_api_key)
+        # 수정 후 (정상 작동)
+        pm10, pm10_grade = get_pm10_info(lat, lon)
         
 
         # 기온/습도에 따른 캐릭터 표정 자동 판별 (나중에 OUTFIT_RULES와 연동할 부분!)
@@ -187,7 +203,7 @@ def auto_fetch_and_save_weather():
         print(f"✅ DB에 새 날씨 기록 1줄이 완벽하게 저장되었습니다! (온도: {temp}도, 상태: {state})")
         
     except Exception as e:
-        print(f"⚠️ 자동 수집 실패 (기상청 응답 지연): {e}")
+        print(f"⚠️ 자동 수집 실패 (기상청 응답 지연 또는 기타 오류): {e}")
 
 # FastAPI 실행 시 스케줄러 시작, 종료 시 스케줄러 종료
 @contextlib.asynccontextmanager
@@ -245,7 +261,8 @@ def get_future_forecast():
     future_forecast = []
 
     try:
-        response = requests.get(FCST_URL, params=params, timeout=5)
+        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
+        response = requests.get(FCST_URL, params=params, timeout=15)
         items = response.json()['response']['body']['items']['item']
 
         forecast_dict = {}

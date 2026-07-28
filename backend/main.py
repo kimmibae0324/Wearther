@@ -9,9 +9,115 @@ import requests
 from datetime import datetime, timedelta
 import random
 from sqlalchemy import and_
+from apscheduler.schedulers.background import BackgroundScheduler
+import contextlib
+
+# 주간 예보 API 속도 개선을 위한 메모리 캐시
+WEEKLY_CACHE = {
+    "data": [],
+    "last_updated": None
+}
 
 WEEKDAY = ["월", "화", "수", "목", "금", "토", "일"]
 
+def auto_fetch_and_save_weather():
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] 🤖 스케줄러 작동: 기상청 실황 데이터 수집 중...")
+    safe_time = datetime.now() - timedelta(hours=1)
+    
+    params = {
+        'serviceKey': API_KEY, 
+        'pageNo': '1',
+        'numOfRows': '1000',
+        'dataType': 'JSON',
+        'base_date': safe_time.strftime('%Y%m%d'), 
+        'base_time': safe_time.strftime('%H00'),     
+        'nx': NX, 'ny': NY               
+    }
+    
+    try:
+        response = requests.get(FCST_URL.replace('getUltraSrtFcst', 'getUltraSrtNcst'), params=params, timeout=15)
+        items = response.json()['response']['body']['items']['item']
+        
+        temp = 0.0
+        humidity = 0
+        for item in items:
+            if item['category'] == 'T1H': temp = float(item['obsrValue'])
+            elif item['category'] == 'REH': humidity = int(item['obsrValue'])
+        
+        # 하늘 상태 가져오기
+        fcst_params = {
+            'serviceKey': API_KEY, 'pageNo': '1', 'numOfRows': '1000',
+            'dataType': 'JSON', 'base_date': safe_time.strftime('%Y%m%d'),
+            'base_time': safe_time.strftime('%H30'), 'nx': NX, 'ny': NY
+        }
+        fcst_res = requests.get(FCST_URL, params=fcst_params, timeout=15).json()
+        fcst_items = fcst_res['response']['body']['items']['item']
+        
+        sky = "맑음"
+        pop_prob = 0
+        is_raining = False
+        for item in fcst_items:
+            if item["category"] == "POP":
+                pop_prob = int(item["fcstValue"])
+            elif item["category"] == "PTY":
+                pty = int(item["fcstValue"])
+                if pty > 0: is_raining = True
+                if pty == 1: sky = "비"
+                elif pty == 2: sky = "비/눈"
+                elif pty == 3: sky = "눈"
+                elif pty == 4: sky = "소나기"
+            elif item["category"] == "SKY" and not is_raining:
+                sky = SKY_MAP.get(item["fcstValue"], "맑음")
+
+        rain_gear = "우비+우산" if is_raining else ("우비" if pop_prob > 0 else "필요없음")
+        pm10_val, pm10_grade = get_pm10_info(37.5636, 127.0032)
+
+        state = "0"
+        if temp >= 28: state = "1"
+        elif temp <= 10: state = "2"
+        elif humidity >= 80: state = "3"
+        else: state = "0"
+
+        # DB에 저장
+        db = SessionLocal()
+        try:
+            new_log = models.WeatherLog(
+                user_id=1,
+                temperature=temp,
+                humidity=humidity,
+                sky=sky,
+                character_state=state,
+                pm10=pm10_val,
+                pm10_grade=pm10_grade,
+                rain_gear=rain_gear,
+                pop=pop_prob
+            )
+            db.add(new_log)
+            db.commit()
+            print(f"✅ DB에 실시간 날씨 저장 완료! (온도: {temp}°C, 하늘: {sky})")
+        except Exception as db_e:
+            db.rollback()
+            print("DB 저장 에러:", db_e)
+        finally:
+            db.close()
+            
+    except Exception as e:
+        print(f"⚠️ 자동 수집 실패 (기상청 응답 지연): {e}")
+
+# 서버가 켜질 때 스케줄러 작동 설정
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler = BackgroundScheduler(timezone="Asia/Seoul")
+    # 1분마다 기상청 데이터를 자동 수집하도록 설정
+    scheduler.add_job(auto_fetch_and_save_weather, 'interval', minutes=1)
+    scheduler.start()
+    
+    # 서버 켜자마자 즉시 1회 실행해서 DB에 데이터를 채워줌
+    auto_fetch_and_save_weather()
+    
+    yield
+    scheduler.shutdown()
+    
 def get_day_label(date_str):
     """
     date_str : YYYYMMDD
@@ -37,7 +143,7 @@ OUTFIT_ZIPUP = "집업+긴"
 OUTFIT_COAT = "코트+긴"
 OUTFIT_PADDING = "패딩"
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,25 +187,45 @@ def map_to_grid(lat, lon):
     ny = int(math.floor(ro - ra * math.cos(theta) + YO + 0.5))
     return nx, ny
 
-# 오픈웨더맵 API 키 및 실시간 미세먼지 조회 함수
-OWM_API_KEY = '7335d6deae8c0ee7826b672c743ed72a'
+# WAQI 메일로 받은 토큰을 여기에 적어주세요
+WAQI_TOKEN = '84b438216347483d144278db7a97f068b1527135'
 
-def get_pm10_info(lat, lon):
-    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={OWM_API_KEY}"
-    try:
-        res = requests.get(url, timeout=5).json()
-        pm10 = res['list'][0]['components']['pm10']
-        
-        # 4단계 세분화 등급 변환
-        if pm10 <= 30: grade = "좋음"
-        elif pm10 <= 80: grade = "보통"
-        elif pm10 <= 150: grade = "나쁨"
-        else: grade = "매우나쁨"
-        return float(pm10), grade
-    except Exception as e:
-        print("⚠️ 미세먼지 API 호출 실패:", e)
-        return 0.0, "보통"
+def get_pm10_info(lat, lon): # server.py의 경우 def get_pm10_info(lat, lon, WAQI_TOKEN):
+    # WAQI 위경도 검색 API 주소
+    url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_TOKEN}"
     
+    try:
+        res = requests.get(url, timeout=15).json()
+        
+        # 응답 상태가 'ok'가 아니면 에러로 간주
+        if res.get('status') != 'ok':
+            print(f"⚠️ WAQI 미세먼지 API 에러: {res}")
+            return 0.0, "보통"
+            
+        # 미세먼지(pm10) 수치 추출
+        # 측정소에 따라 pm10 데이터가 누락된 경우를 대비해 get() 사용
+        pm10_data = res['data']['iaqi'].get('pm10')
+        
+        if pm10_data is None:
+            return 0.0, "보통"
+            
+        pm10 = float(pm10_data['v'])
+        
+        # 한국 미세먼지 등급 기준 적용
+        if pm10 <= 30:
+            grade = "좋음"
+        elif pm10 <= 80:
+            grade = "보통"
+        elif pm10 <= 150:
+            grade = "나쁨"
+        else:
+            grade = "매우나쁨"
+            
+        return pm10, grade
+        
+    except Exception as e:
+        print(f"⚠️ 미세먼지 API 호출 실패: {e}")
+        return 0.0, "보통"
 # 회원 등록
 class UserCreate(BaseModel):
     nickname: str
@@ -213,57 +339,56 @@ VILAGE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilage
 
 
 # 단기예보(초단기)
-def get_future_forecast():
-    safe_time = get_safe_time()
-
+def get_hourly_forecast_from_vilage():
+    base_date, base_time = get_vilage_base()
+    
     params = {
         'serviceKey': API_KEY,
-        'pageNo': '1',
-        'numOfRows': '1000',
-        'dataType': 'JSON',
-        'base_date': safe_time.strftime('%Y%m%d'),
-        'base_time': safe_time.strftime('%H30'),
-        'nx': NX,
-        'ny': NY
+        'pageNo': '1', 'numOfRows': '1000', 'dataType': 'JSON',
+        'base_date': base_date, 'base_time': base_time,
+        'nx': NX, 'ny': NY
     }
-
+    
     future_forecast = []
-
     try:
-        response = requests.get(FCST_URL, params=params, timeout=5)
-        items = response.json()['response']['body']['items']['item']
-
-        forecast_dict = {}
-
+        res = requests.get(VILAGE_URL, params=params, timeout=15).json()
+        items = res['response']['body']['items']['item']
+        
+        temp_dict = {}
         for item in items:
-
-            time = item["fcstTime"]
-            category = item["category"]
-            value = item["fcstValue"]
-
-            if time not in forecast_dict:
-                forecast_dict[time] = {}
-
-            if category == "T1H":
-                forecast_dict[time]["temperature"] = float(value)
-
-            elif category == "SKY":
-
-                forecast_dict[time]["sky"] = SKY_MAP.get(value, "알수없음")
-                
-        for time, info in forecast_dict.items():
-
-            if "temperature" in info:
-
-                future_forecast.append({
-                    "time": f"{time[:2]}:{time[2:]}",
-                    "temperature": info["temperature"],
-                    "sky": info.get("sky", "알수없음")
-                })
-
+            dt = item['fcstDate'] + item['fcstTime']
+            if dt not in temp_dict:
+                temp_dict[dt] = {}
+            
+            c = item['category']
+            v = item['fcstValue']
+            
+            # 단기예보는 T1H 대신 TMP(1시간 기온) 사용
+            if c == 'TMP': 
+                temp_dict[dt]['temperature'] = float(v)
+            elif c == 'SKY':
+                if 'sky' not in temp_dict[dt]:
+                    temp_dict[dt]['sky'] = SKY_MAP.get(v, "알수없음")
+            elif c == 'PTY':
+                pty = int(v)
+                if pty == 1: temp_dict[dt]['sky'] = "비"
+                elif pty == 2: temp_dict[dt]['sky'] = "비/눈"
+                elif pty == 3: temp_dict[dt]['sky'] = "눈"
+                elif pty == 4: temp_dict[dt]['sky'] = "소나기"
+        
+        # 현재 시간 이후의 데이터만 추출 (최대 24시간치)
+        now_str = datetime.now().strftime("%Y%m%d%H00")
+        sorted_dts = sorted([d for d in temp_dict.keys() if d >= now_str])
+        
+        for dt in sorted_dts[:24]:
+            future_forecast.append({
+                "time": f"{dt[8:10]}:00", # HH:00 형식 포맷팅
+                "temperature": temp_dict[dt].get('temperature'),
+                "sky": temp_dict[dt].get('sky', '맑음')
+            })
     except Exception as e:
-        print(e)
-
+        print("시간별 예보 오류:", e)
+        
     return future_forecast
 
 # 일주일치 주간 예보
@@ -292,7 +417,7 @@ def get_mid_forecast():
                 'regId': '11B00000',
                 'tmFc': tmFcst
             },
-            timeout=5
+            timeout=15
         ).json()
 
         res_ta = requests.get(
@@ -305,7 +430,7 @@ def get_mid_forecast():
                 'regId': '11B10101',
                 'tmFc': tmFcst
             },
-            timeout=5
+            timeout=15
         ).json()
         print("LAND =", res_land)
         print("TA =", res_ta)
@@ -368,7 +493,7 @@ def get_short_forecast(current_temp):
         res = requests.get(
             VILAGE_URL,
             params=params,
-            timeout=5
+            timeout=15
         ).json()
 
         items = res["response"]["body"]["items"]["item"]
@@ -654,7 +779,7 @@ def generate_custom_message(user, weather_data):
     outfit = weather_data.get("recommended_outfit")
     rain = weather_data.get("rain_gear", "없음")
 
-    sentence1 = f"오늘은 전체적으로 {sky_str} 하늘에 미세먼지는 {pm_str} 수준이며, {sensitivity_text}"
+    sentence1 = f"{user.nickname}님, 오늘은 전체적으로 {sky_str} 하늘에 미세먼지는 {pm_str} 수준이며, {sensitivity_text}"
     
     if rain != "필요없음" and rain != "없음":
         sentence2 = f"이런 날씨에는 체온 조절에 알맞은 **{outfit}** 차림을 가장 추천해요."
@@ -715,23 +840,21 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
     )
 
     if latest_weather is None:
-        return {
-            "status": "error",
-            "message": "날씨 데이터가 없습니다."
-        }
-    
-# ⭐ [추가] DB에 저장된 옛날 미세먼지 수치를 방금 조회한 실시간 수치로 교체!
-    latest_weather.pm10 = pm10_val
-    latest_weather.pm10_grade = pm10_grade
+        latest_weather = models.WeatherLog(
+            temperature=20.0, humidity=50, sky="맑음", 
+            character_state=0, pm10=pm10_val, pm10_grade=pm10_grade,
+            rain_gear="없음", pop=0
+        )
+    else:
+        latest_weather.pm10 = pm10_val
+        latest_weather.pm10_grade = pm10_grade
 
-    # 4. 온도 가중치 변환 및 추천 옷차림 계산
     heat_weight = map_sensitivity(user.heat_sensitivity)
     cold_weight = map_sensitivity(user.cold_sensitivity)
     recommended_temperature = latest_weather.temperature + heat_weight - cold_weight   
     recommended_outfit = recommend_outfit(recommended_temperature) 
     sun_times = get_sun_times()
 
-    # 날씨 데이터 딕셔너리 구성 (여기에 실시간 미세먼지가 들어갑니다!)
     weather_data = {
         "temperature": latest_weather.temperature,
         "recommended_temperature": recommended_temperature,
@@ -739,28 +862,36 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
         "humidity": latest_weather.humidity,
         "sky": latest_weather.sky,
         "character_state": latest_weather.character_state,
-        "pm10": pm10_val,        # ⭐ 실시간 미세먼지 수치 반영
-        "pm10_grade": pm10_grade,  # ⭐ 실시간 미세먼지 등급 반영
+        "pm10": pm10_val,        
+        "pm10_grade": pm10_grade,  
         "rain_gear": getattr(latest_weather, "rain_gear", "없음"),
         "sunrise": sun_times["sunrise"],
         "sunset": sun_times["sunset"]
     }
     
-    # 5. 맞춤형 메시지 생성 및 DB 저장 (실시간 미세먼지 기반으로 문장이 만들어짐)
     custom_message = generate_custom_message(user, weather_data)
     user.ai_message = custom_message
     db.commit()
 
-    # 6. 우산 알림 서비스 체크 (강수확률 70% 이상 확인 및 셋로그 DB 저장)
     pop_prob = float(latest_weather.pop)
     umbrella_alert = check_umbrella_alert(pop_prob, user.user_id, db)
 
-    # 7. 예보 데이터 가져오기
-    future_forecast = get_future_forecast()
-    weekly = get_short_forecast(latest_weather.temperature)
-    weekly.extend(get_mid_forecast())
+    # ⭐ [수정 2] 시간별 예보 단기예보 함수로 통합
+    future_forecast = get_hourly_forecast_from_vilage()
     
-    # 8. Flutter로 최종 JSON 반환
+    # ⭐ [수정 3] 주간예보 캐싱 (새로고침 속도 획기적 개선)
+    global WEEKLY_CACHE
+    now = datetime.now()
+    
+    # 캐시가 비어있거나 마지막 갱신이 3시간 지났을 때만 기상청 API 재호출
+    if not WEEKLY_CACHE["data"] or not WEEKLY_CACHE["last_updated"] or (now - WEEKLY_CACHE["last_updated"] > timedelta(hours=3)):
+        weekly = get_short_forecast(latest_weather.temperature)
+        weekly.extend(get_mid_forecast())
+        WEEKLY_CACHE["data"] = weekly
+        WEEKLY_CACHE["last_updated"] = now
+    else:
+        weekly = WEEKLY_CACHE["data"]
+
     return {
         "status": "success",
         "current_weather": weather_data,
