@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String weather = '';
   String dust = '나쁨';
   String characterState = '보통_무표정'; //[cite: 1]
+  String customAdvice = '';
   List<Map<String, dynamic>> futureForecast = []; // 실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // 주간예보를 위한 코드
   static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn'; //[cite: 1]
@@ -190,6 +191,7 @@ void _showFortuneDialog() {
           humidity = data['current_weather']['humidity'];
           recommendedOutfit = data['current_weather']['recommended_outfit'];
           weather = data['current_weather']['sky'];
+          customAdvice = data['custom_advice'] ?? '';
           dust = data['current_weather']['pm10_grade'] ?? data['current_weather']['dust'] ?? '보통'; //[cite: 1, 2]
 
           characterState = (data['current_weather']['character_state'] ?? '보통_무표정').toString(); //[cite: 1]
@@ -616,22 +618,31 @@ void _showFortuneDialog() {
     if (weather == '비' || recommendedOutfit == 'raincoat') {
       return 'assets/characters/dragon_outfit_raincoat.png';
     }
+    
+    // ⭐ [수정] 백엔드에서 넘어오는 한글 명칭도 인식할 수 있도록 case 추가
     switch (recommendedOutfit) {
+      case '숏+숏':
       case 'short_short':
         return 'assets/characters/dragon_outfit_short_short.png';
+      case '숏+롱':
       case 'short_long':
         return 'assets/characters/dragon_outfit_short_long.png';
+      case '롱+롱':
       case 'long_long':
         return 'assets/characters/dragon_outfit_long_long.png';
+      case '가디건+긴':
       case 'cardigan_long':
       case 'cardigan':
         return 'assets/characters/dragon_outfit_cardigan.png';
+      case '집업+긴':
       case 'zipup_long':
       case 'zipup':
         return 'assets/characters/dragon_outfit_zipup.png';
+      case '코트+긴':
       case 'coat_long':
       case 'coat':
         return 'assets/characters/dragon_outfit_coat.png';
+      case '패딩':
       case 'padding':
         return 'assets/characters/dragon_outfit_padding.png';
       default:
@@ -1074,7 +1085,7 @@ void _showFortuneDialog() {
           ),
           const SizedBox(height: 14),
           Text(
-            personalFeelingMessage,
+            customAdvice.isNotEmpty ? customAdvice : personalFeelingMessage,
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
