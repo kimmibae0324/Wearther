@@ -429,9 +429,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> sendFeedback(int userId, String feedback) async {
     await http.post(
-      Uri.parse('$apiBaseUrl/user/feedback'),
+      Uri.parse('$apiBaseUrl/feedback'),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"user_id": userId, "user_feedback": feedback}),
+      body: jsonEncode({"user_id": userId, "comment": feedback}),
     );
   }
 
