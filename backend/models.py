@@ -10,7 +10,7 @@ class User(Base):
     age_group = Column(String(20), nullable=False) # 연령대 저장
     cold_sensitivity = Column(Integer) # 추위 민감도
     heat_sensitivity = Column(Integer) # 더위 민감도
-    ai_message = Column(Text) # 맞춤형 메세지 저장
+    ai_message = Column(Text) # 맞춤형 메시지 저장
     
 
 class WeatherLog(Base):
@@ -31,7 +31,7 @@ class WeatherLog(Base):
     pm10_grade = Column(String(20), default="보통") # 미세먼지 등급 (좋음/보통/나쁨/매우나쁨)
 
     character_state = Column(String(50))
-    
+
     rain_gear = Column(String(50), default="없음")  # 우비/우산 추천 정보 (우비+우산 / 우비 / 없음)
     pop = Column(Integer, default=0) # 우산 알림 서비스에 사용
 

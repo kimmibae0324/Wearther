@@ -1,320 +1,96 @@
-#server.py: 현재 날씨 조회, 시간대별 예보 조회, DB 저장
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import requests
-import pymysql
-from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-import contextlib
+# server.py
+# 비즈니스 로직 (옷 추천, AI 메시지, 우산 알림)
+# =============================================================================
 
-# 공통 설정
-API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
+from datetime import datetime
 
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "root", # MySQL 비밀번호 입력!
-    "db": "weather_app_db",
-    "charset": "utf8mb4"
-}
+from sqlalchemy.orm import Session
 
-# 기준 지역(서울시 중구 청구동)의 기상청 격자 좌표
-NX = 60
-NY = 127
+import models
 
-# 기상청 API 주소 정리
-NCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst')
-FCST_URL = ('http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst')
+# =============================================================================
+# Outfit Constants
+# =============================================================================
 
-# WAQI API
-WAQI_TOKEN = '84b438216347483d144278db7a97f068b1527135'
-lat, lon = 37.5636, 127.0032
+OUTFIT_SHORT_SHORT = "숏+숏"
+OUTFIT_SHORT_LONG = "숏+롱"
+OUTFIT_LONG_LONG = "롱+롱"
+OUTFIT_CARDIGAN = "가디건+긴"
+OUTFIT_ZIPUP = "집업+긴"
+OUTFIT_COAT = "코트+긴"
+OUTFIT_PADDING = "패딩"
 
-# 하늘 상태 딕셔너리
-SKY_MAP = {
-    "1": "맑음",
-    "3": "구름많음",
-    "4": "흐림"
-}
 
-# 기상청 API 조회 시 사용할 기준 시각(현재 시간 - 1시간) 반환
-def get_safe_time():
-    return datetime.now() - timedelta(hours=1)
+# =============================================================================
+# Outfit Recommendation
+# =============================================================================
 
-# 기상청 SKY 코드를 사람이 읽을 수 있는 하늘 상태 문자열로 변환
-def get_sky(fcst_items):
-    sky = "알수없음"
-
-    for item in fcst_items:
-        if item["category"] == "PTY":
-            pty = int(item["fcstValue"])
-
-            if pty == 1:
-                return "비"
-            elif pty == 2:
-                return "비/눈"
-            elif pty == 3:
-                return "눈"
-            elif pty == 4:
-                return "소나기"
-
-        elif item["category"] == "SKY":
-            sky = SKY_MAP.get(item["fcstValue"], "알수없음")
-
-    return sky
-
-# 미세먼지 API 등급 4단계 세분화 함수 (⭐ 에러 방지 코드 추가 및 timeout 15초로 변경)
-def get_pm10_info(lat, lon): # server.py의 경우 def get_pm10_info(lat, lon, WAQI_TOKEN):
-    # WAQI 위경도 검색 API 주소
-    url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQI_TOKEN}"
-    
-    try:
-        res = requests.get(url, timeout=15).json()
-        
-        # 응답 상태가 'ok'가 아니면 에러로 간주
-        if res.get('status') != 'ok':
-            print(f"⚠️ WAQI 미세먼지 API 에러: {res}")
-            return 0.0, "보통"
-            
-        # 미세먼지(pm10) 수치 추출
-        # 측정소에 따라 pm10 데이터가 누락된 경우를 대비해 get() 사용
-        pm10_data = res['data']['iaqi'].get('pm10')
-        
-        if pm10_data is None:
-            return 0.0, "보통"
-            
-        pm10 = float(pm10_data['v'])
-        
-        # 한국 미세먼지 등급 기준 적용
-        if pm10 <= 30:
-            grade = "좋음"
-        elif pm10 <= 80:
-            grade = "보통"
-        elif pm10 <= 150:
-            grade = "나쁨"
-        else:
-            grade = "매우나쁨"
-            
-        return pm10, grade
-        
-    except Exception as e:
-        print(f"⚠️ 미세먼지 API 호출 실패: {e}")
-        return 0.0, "보통"
-
-# 강수확률 기반 우비/우산 추천 함수
-def get_rain_gear(pop_prob):
-    if pop_prob >= 90:
-        return "우비+우산"
-    elif pop_prob > 0:
-        return "우비"
+def recommend_outfit(temp):
+    if temp >= 28:
+        return OUTFIT_SHORT_SHORT
+    elif temp >= 23:
+        return OUTFIT_SHORT_LONG
+    elif temp >= 18:
+        return OUTFIT_LONG_LONG
+    elif temp >= 13:
+        return OUTFIT_CARDIGAN
+    elif temp >= 9:
+        return OUTFIT_ZIPUP
+    elif temp >= 5:
+        return OUTFIT_COAT
     else:
-        return "필요없음"
+        return OUTFIT_PADDING
 
-# 현재 날씨를 기상청 API에서 조회하여 DB에 저장
-def auto_fetch_and_save_weather():
-    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] 🤖 스케줄러 작동: 기상청 실황 데이터 수집 중...")
 
-    safe_time = get_safe_time()
+# =============================================================================
+# AI Message (AI 맞춤형 메시지 생성)
+# =============================================================================
 
-    # API 호출
-    params = {
-        'serviceKey': API_KEY, 
-        'pageNo': '1',
-        'numOfRows': '1000',
-        'dataType': 'JSON',
-        'base_date': safe_time.strftime('%Y%m%d'), 
-        'base_time': safe_time.strftime('%H00'),     
-        'nx': NX, 'ny': NY               
-    }
+def generate_custom_message(user, weather_data):
+    if user.heat_sensitivity >= 75:
+        sensitivity_text = "더위를 많이 타셔서 다소 후덥지근하게 느낄 수 있어요."
+    elif user.cold_sensitivity >= 75:
+        sensitivity_text = "추위에 민감하신 편이라 제법 쌀쌀하게 느껴질 수 있는 날씨예요."
+    else:
+        sensitivity_text = "활동하기 무난한 체감온도를 보이는 날이에요."
+
+    sky_str = weather_data.get("sky", "맑음")
+    pm_str = weather_data.get("pm10_grade", "보통(보라)")
+    outfit = weather_data.get("recommended_outfit")
+    rain = weather_data.get("rain_gear", "없음")
+
+    sentence1 = f"{user.nickname}님, 오늘은 전체적으로 {sky_str} 하늘에 미세먼지는 {pm_str} 수준이며, {sensitivity_text}"
     
-    try:
-        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
-        response = requests.get(NCST_URL, params=params, timeout=15)
-        items = response.json()['response']['body']['items']['item']
+    if rain != "필요없음" and rain != "없음":
+        sentence2 = f"이런 날씨에는 체온 조절에 알맞은 **{outfit}** 차림을 가장 추천해요."
+        sentence3 = f"또한 갑작스러운 강수에 대비해 외출 시 **{rain}**도 꼭 챙겨주세요!"
+        return f"{sentence1} {sentence2} {sentence3}"
+    else:
+        sentence2 = f"오늘 같은 날에는 편안하고 쾌적하게 입을 수 있는 **{outfit}** 차림을 추천해요!"
+        return f"{sentence1} {sentence2}"
+
+
+# =============================================================================
+# Notification Service (우산 알림 서비스)
+# =============================================================================
+
+def check_umbrella_alert(pop_prob, user_id, db: Session):
+    if pop_prob >= 70:
+        alert_msg = f"강수확률 {int(pop_prob)}%입니다. 비가 올 것 같으니 우산을 챙기세요!"
         
-        temp = 0.0
-        humidity = 0
-        sky = "알수없음"
+        new_log = models.NotificationLog(
+            user_id=user_id,
+            title="☔ 우산 알림",
+            message=alert_msg,
+            created_at=datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
+        db.add(new_log)
+        db.commit()
         
-        for item in items:
-            if item['category'] == 'T1H': temp = float(item['obsrValue'])
-            elif item['category'] == 'REH': humidity = int(item['obsrValue'])
-        
-        # 예보 API 호출 (하늘 상태 가져오기)
-        fcst_params = {
-            'serviceKey': API_KEY,
-            'pageNo': '1',
-            'numOfRows': '1000',
-            'dataType': 'JSON',
-            'base_date': safe_time.strftime('%Y%m%d'),
-            'base_time': safe_time.strftime('%H30'),
-            'nx': NX,
-            'ny': NY
+        return {
+            "show_popup": True,
+            "popup_message": alert_msg,
+            "pop_probability": pop_prob
         }
-
-        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
-        fcst_response = requests.get(FCST_URL, params=fcst_params, timeout=15)
-        fcst_items = fcst_response.json()['response']['body']['items']['item']
-
-        sky = get_sky(fcst_items)
-
-        pop_prob = 0
-        is_raining = False
-
-        for item in fcst_items:
-            if item["category"] == "POP":
-                pop_prob = int(item["fcstValue"])
-            elif item["category"] == "PTY":
-                if int(item["fcstValue"]) > 0:
-                    is_raining = True
-        
-        if is_raining:
-                rain_gear = "우비+우산"
-        else:
-            rain_gear = get_rain_gear(pop_prob)
-            
-        # 수정 후 (정상 작동)
-        pm10, pm10_grade = get_pm10_info(lat, lon)
-        
-
-        # 기온/습도에 따른 캐릭터 표정 자동 판별 (나중에 OUTFIT_RULES와 연동할 부분!)
-        state = 0 #쾌적
-
-        if temp >= 28: state = 1  #"더움_땀뻘뻘"
-        elif temp <= 10: state = 2 #"추움_덜덜"
-        elif humidity >= 80: state = 3 #"습함_불쾌"
-        else: state = 0 #기본(쾌적)
-        
-        # WEATHER_LOG에 새 줄(INSERT)로 영구 보관!
-        connection = pymysql.connect(**DB_CONFIG)
-
-        try:
-            with connection.cursor() as cursor:
-                sql = """
-                INSERT INTO WEATHER_LOG (user_id, temperature, humidity, sky, character_state, pm10, pm10_grade, rain_gear, pop) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql, (1, temp, humidity, sky, state, pm10, pm10_grade, rain_gear, pop_prob)) # 임시로 1번 유저로 저장
-            connection.commit() # 진짜로 DB에 도장 쾅!
-        finally:
-            connection.close()
-        
-        print(f"✅ DB에 새 날씨 기록 1줄이 완벽하게 저장되었습니다! (온도: {temp}도, 상태: {state})")
-        
-    except Exception as e:
-        print(f"⚠️ 자동 수집 실패 (기상청 응답 지연 또는 기타 오류): {e}")
-
-# FastAPI 실행 시 스케줄러 시작, 종료 시 스케줄러 종료
-@contextlib.asynccontextmanager
-async def lifespan(app: FastAPI):
-    scheduler = BackgroundScheduler(timezone="Asia/Seoul")
-    # 눈으로 바로 확인하기 위해 우선 '1분'마다 돌립니다! (나중엔 hours=1 로 변경)
-    scheduler.add_job(auto_fetch_and_save_weather, 'interval', minutes=1)
-    scheduler.start()
-    yield
-    scheduler.shutdown()
-
-app = FastAPI(lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
-)
-
-## Flutter(HomeScreen, WeatherDetailScreen)에서 사용하는 함수들
-# DB에서 가장 최근에 저장된 현재 날씨 조회
-def get_current_weather():
-
-    connection = pymysql.connect(
-        **DB_CONFIG,
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-    try:
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM WEATHER_LOG ORDER BY log_id DESC LIMIT 1"
-            cursor.execute(sql)
-            current_weather = cursor.fetchone()
-    finally:
-        connection.close()
-
-    return current_weather
-
-
-# 기상청 API에서 시간대별 예보 조회
-def get_future_forecast():
-    safe_time = get_safe_time()
-
-    params = {
-        'serviceKey': API_KEY,
-        'pageNo': '1',
-        'numOfRows': '1000',
-        'dataType': 'JSON',
-        'base_date': safe_time.strftime('%Y%m%d'),
-        'base_time': safe_time.strftime('%H30'),
-        'nx': NX,
-        'ny': NY
-    }
-
-    future_forecast = []
-
-    try:
-        # ⭐ timeout을 15초로 늘려서 기상청 지연에 대비
-        response = requests.get(FCST_URL, params=params, timeout=15)
-        items = response.json()['response']['body']['items']['item']
-
-        forecast_dict = {}
-
-        for item in items:
-
-            time = item["fcstTime"]
-            category = item["category"]
-            value = item["fcstValue"]
-
-            if time not in forecast_dict:
-                forecast_dict[time] = {}
-
-            if category == "T1H":
-                forecast_dict[time]["temperature"] = float(value)
-
-            elif category == "SKY":
-
-                forecast_dict[time]["sky"] = SKY_MAP.get(value, "알수없음")
-
-        for time, info in forecast_dict.items():
-
-            if "temperature" in info:
-
-                future_forecast.append({
-                    "time": f"{time[:2]}:{time[2:]}",
-                    "temperature": info["temperature"],
-                    "sky": info.get("sky", "알수없음")
-                })
-
-    except Exception as e:
-        print(e)
-
-    return future_forecast
-
-# 현재 날씨와 시간대별 예보를 하나의 데이터로 묶어 반환
-def get_weather_data():
-
-    return {
-        "current_weather": get_current_weather(),
-        "future_forecast": get_future_forecast()
-    }
-
-# Flutter(HomeScreen)에서 호출하는 날씨 API
-@app.get("/weather-info")
-def get_weather_info():
-    weather = get_weather_data()
-    return {
-        "status": "success",
-        "current_weather": weather["current_weather"],
-        "future_forecast": weather["future_forecast"]
-    }
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    
+    return {"show_popup": False, "popup_message": "", "pop_probability": pop_prob}
