@@ -24,18 +24,25 @@ CREATE TABLE IF NOT EXISTS `USER` (
 -- 날씨 실황 테이블
 CREATE TABLE IF NOT EXISTS WEATHER_LOG (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+
+    nx INT NOT NULL,
+    ny INT NOT NULL,
+    
+    update_at DATETIME NOT NULL,
+
     temperature FLOAT,
     humidity INT,
     sky VARCHAR(20),
-    character_state VARCHAR(50),
+    
     pm10 INT,
     pm10_grade VARCHAR(20),
+
+    character_state VARCHAR(50),
+
     rain_gear VARCHAR(50) DEFAULT '없음',
     pop INT DEFAULT 0,
 
-    FOREIGN KEY (user_id)
-        REFERENCES `USER`(user_id)
+    UNIQUE(nx, ny)
 );
 
 
