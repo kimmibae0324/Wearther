@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime
 from database import Base
 
 class User(Base):
@@ -16,14 +16,22 @@ class User(Base):
 class WeatherLog(Base):
     __tablename__ = "WEATHER_LOG"
 
-    log_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    log_id = Column(Integer, primary_key=True, autoincrement=True)
+
+    nx = Column(Integer, nullable=False)
+    ny = Column(Integer, nullable=False)
+
+    update_at = Column(DateTime, nullable=False)
+
     temperature = Column(Float)
     humidity = Column(Integer)
     sky = Column(String(20))
-    character_state = Column(String(50))
+
     pm10 = Column(Float, default=0.0)             # 미세먼지 농도 (예: 45.5)
     pm10_grade = Column(String(20), default="보통") # 미세먼지 등급 (좋음/보통/나쁨/매우나쁨)
+
+    character_state = Column(String(50))
+    
     rain_gear = Column(String(50), default="없음")  # 우비/우산 추천 정보 (우비+우산 / 우비 / 없음)
     pop = Column(Integer, default=0) # 우산 알림 서비스에 사용
 
