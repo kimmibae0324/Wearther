@@ -121,6 +121,7 @@ Future<int> registerUser() async {
     "heat_sensitivity": heatSensitivity.round(),
   };
 
+
   final response = await http.post(
     Uri.parse('$apiBaseUrl/user/register'),
     headers: {"Content-Type": "application/json"},
@@ -134,6 +135,26 @@ Future<int> registerUser() async {
 
   throw Exception("회원가입 실패: ${response.statusCode} / ${response.body}");
 }
+  Future<void> updateUser(int userId) async {
+    final requestBody = {
+      "user_id": userId,
+      "nickname": nicknameController.text.trim().isEmpty
+          ? "수룡이"
+          : nicknameController.text.trim(),
+      "age_group": selectedAge.toString().trim().isEmpty
+          ? "20대"
+          : selectedAge.toString().trim(),
+      "cold_sensitivity": coldSensitivity.round(),
+      "heat_sensitivity": heatSensitivity.round(),
+    };
+
+    await http.post(
+      Uri.parse('$apiBaseUrl/user/update'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(requestBody),
+    );
+  }
+
 
   Future<void> saveLocalUserInfo(int userId) async {
     final prefs = await SharedPreferences.getInstance();
