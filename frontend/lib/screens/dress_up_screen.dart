@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
+import 'package:gal/gal.dart';
 
 class DressUpScreen extends StatefulWidget {
   const DressUpScreen({super.key});
@@ -14,6 +21,216 @@ class _DressUpScreenState extends State<DressUpScreen> {
   static const Color sungshinBrightViolet = Color(0xFF6B6EB3);
   static const Color textDark = Color(0xFF2E2440);
 
+
+  void openDressUpMenuSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              const Text(
+                '목록',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              _buildMenuTile(
+                icon: Icons.print_rounded,
+                title: '프린트하기',
+                subtitle: '현재 코디를 사진첩에 저장',
+                onTap: () async {
+                  Navigator.pop(context);
+                  await saveOutfitToGallery();
+                },
+              ),
+
+              _buildMenuTile(
+                icon: Icons.emoji_events_rounded,
+                title: '콘테스트',
+                subtitle: '나중에 추가 예정',
+                isDisabled: true,
+                onTap: () {},
+              ),
+
+              _buildMenuTile(
+                icon: Icons.auto_awesome_rounded,
+                title: 'AI 평가 / 수동 평가',
+                subtitle: '나중에 추가 예정',
+                isDisabled: true,
+                onTap: () {},
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDisabled = false,
+  }) {
+    return GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: isDisabled
+              ? Colors.grey.shade100
+              : sungshinViolet.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isDisabled ? Colors.black26 : sungshinViolet,
+            ),
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: isDisabled ? Colors.black38 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDisabled ? Colors.black26 : Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            if (!isDisabled)
+              Icon(
+                Icons.chevron_right_rounded,
+                color: sungshinViolet,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  
+  
+  //이미지 저장
+  Future<void> saveOutfitToGallery() async {
+    if (isSavingOutfit) return;
+
+    try {
+      setState(() {
+        isSavingOutfit = true;
+      });
+
+      if (kIsWeb) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('웹에서는 사진첩 저장이 어려워요. Android에서 테스트해주세요.'),
+          ),
+        );
+        return;
+      }
+
+      final boundary = _outfitCaptureKey.currentContext
+          ?.findRenderObject() as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        throw Exception('캡처할 코디 영역을 찾지 못했어요.');
+      }
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
+      if (byteData == null) {
+        throw Exception('이미지 변환에 실패했어요.');
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      final hasAccess = await Gal.hasAccess();
+
+      if (!hasAccess) {
+        await Gal.requestAccess();
+      }
+
+      await Gal.putImageBytes(pngBytes);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('수룡이 코디가 사진첩에 저장됐어요!'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('저장 중 오류가 발생했어요: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSavingOutfit = false;
+        });
+      }
+    }
+  }
+
+  
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +243,9 @@ class _DressUpScreenState extends State<DressUpScreen> {
     _bgmPlayer.dispose();
     super.dispose();
   }
+
+  final GlobalKey _outfitCaptureKey = GlobalKey();
+  bool isSavingOutfit = false;
 
   Future<void> loadSavedDressUp() async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,25 +262,219 @@ class _DressUpScreenState extends State<DressUpScreen> {
     });
   }
 
-  Future<void> toggleBgm() async {
-    if (isBgmOn) {
-      await _bgmPlayer.pause();
+  Future<void> playBgm(int index) async {
+    final selectedTrack = bgmTracks[index];
 
-      if (!mounted) return;
-      setState(() {
-        isBgmOn = false;
-      });
-    } else {
-      await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
-      await _bgmPlayer.setVolume(0.35);
-      await _bgmPlayer.play(AssetSource('audio/dressup_bgm.mp3'));
+    await _bgmPlayer.stop();
+    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
+    await _bgmPlayer.setVolume(0.35);
+    await _bgmPlayer.play(
+      AssetSource(selectedTrack['asset']!),
+    );
 
-      if (!mounted) return;
-      setState(() {
-        isBgmOn = true;
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      selectedBgmIndex = index;
+      isBgmOn = true;
+    });
   }
+
+  Future<void> stopBgm() async {
+    await _bgmPlayer.stop();
+
+    if (!mounted) return;
+
+    setState(() {
+      selectedBgmIndex = null;
+      isBgmOn = false;
+    });
+  }
+
+  Future<void> playRandomBgm() async {
+    if (bgmTracks.isEmpty) return;
+
+    final randomIndex = Random().nextInt(bgmTracks.length);
+    await playBgm(randomIndex);
+  }
+
+  void openBgmSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              const Text(
+                'BGM 선택',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              ...List.generate(
+                bgmTracks.length,
+                (index) {
+                  final bool isSelected =
+                      selectedBgmIndex == index && isBgmOn;
+
+                  return _buildBgmTile(
+                    icon: isSelected
+                        ? Icons.music_note_rounded
+                        : Icons.audiotrack_rounded,
+                    title: bgmTracks[index]['title']!,
+                    isSelected: isSelected,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await playBgm(index);
+                    },
+                  );
+                },
+              ),
+
+              _buildBgmTile(
+                icon: Icons.stop_rounded,
+                title: '정지',
+                isSelected: !isBgmOn,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await stopBgm();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBgmTile({
+    required IconData icon,
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? sungshinViolet.withOpacity(0.12)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? sungshinViolet : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? sungshinViolet : Colors.black45,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected ? sungshinViolet : Colors.black87,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle_rounded,
+                color: sungshinViolet,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+Widget _buildBgmActionButton({
+  required IconData icon,
+  required String text,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      decoration: BoxDecoration(
+        color: sungshinViolet.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: sungshinViolet,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: sungshinViolet,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  final List<Map<String, String>> bgmTracks = const [
+    {
+      'title': 'BGM 1',
+      'asset': 'audio/bgm1.mp3',
+    },
+    {
+      'title': 'BGM 2',
+      'asset': 'audio/bgm2.mp3',
+    },
+    {
+      'title': 'BGM 3',
+      'asset': 'audio/bgm3.mp3',
+    },
+  ];
+
+  int? selectedBgmIndex;
 
   int selectedBackgroundIndex = 0;
   bool isBgmOn = false;
@@ -129,10 +543,12 @@ class _DressUpScreenState extends State<DressUpScreen> {
     await prefs.setInt('dressup_background_index', selectedBackgroundIndex);
   }
 
-  void resetItems() {
+  Future<void> resetItems() async {
     setState(() {
       selectedItemsByCategory.clear();
     });
+
+    await saveDressUp();
   }
   String? getSelectedImagePath(String category) {
     final label = selectedItemsByCategory[category];
@@ -390,39 +806,87 @@ Widget _buildWearingLayer({
               ),
             ),
           ),
-          GestureDetector(
-            onTap: toggleBgm,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.88),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: sungshinViolet.withOpacity(0.18),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isBgmOn
-                        ? Icons.music_note_rounded
-                        : Icons.music_off_rounded,
-                    size: 20,
-                    color: sungshinViolet,
+
+          Row(
+            children: [
+              GestureDetector(
+                onTap: openDressUpMenuSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 11,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isBgmOn ? 'BGM ON' : 'BGM OFF',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: sungshinViolet,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: sungshinViolet.withOpacity(0.18),
+                      width: 1.5,
                     ),
                   ),
-                ],
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.menu_rounded,
+                        size: 20,
+                        color: sungshinViolet,
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        '목록',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: sungshinViolet,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+
+              const SizedBox(width: 8),
+
+              GestureDetector(
+                onTap: openBgmSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: sungshinViolet.withOpacity(0.18),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isBgmOn
+                            ? Icons.music_note_rounded
+                            : Icons.music_off_rounded,
+                        size: 20,
+                        color: sungshinViolet,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isBgmOn && selectedBgmIndex != null
+                            ? bgmTracks[selectedBgmIndex!]['title']!
+                            : 'BGM OFF',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: sungshinViolet,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -639,19 +1103,20 @@ Widget _buildWearingLayer({
                         ]
                       : [],
                 ),
-                child:SizedBox(
-                        width: 235,
-                        height: 330,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned.fill(
-                              child: Image.asset(
-                                'assets/dressup/dressup_character_base.png',
-                                fit: BoxFit.contain,
+                      child: RepaintBoundary(
+                        key: _outfitCaptureKey,
+                        child: SizedBox(
+                          width: 235,
+                          height: 330,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Positioned.fill(
+                                child: Image.asset(
+                                  'assets/dressup/dressup_character_base.png',
+                                  fit: BoxFit.contain,
+                                ),
                               ),
-                            ),
-
                             // 모자
                             _buildWearingLayer(
                               category: '모자',
@@ -688,6 +1153,7 @@ Widget _buildWearingLayer({
                           ],
                         ),
                       )
+                   )
               );
             },
           ),
@@ -847,6 +1313,7 @@ Widget _buildWearingLayer({
       ),
     );
   }
+
   Widget _buildClothItem({
     required String imagePath,
     required String label,
@@ -1066,7 +1533,9 @@ Widget _buildWearingLayer({
               const SizedBox(width: 8),
 
               GestureDetector(
-                onTap: resetItems,
+                onTap: () async {
+                  await resetItems();
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 9,

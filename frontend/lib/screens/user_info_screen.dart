@@ -109,36 +109,31 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     }
   }
 
-  Future<int> registerUser() async {
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/user/register'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "nickname": nicknameController.text.trim(),
-        "age_group": selectedAge,
-        "cold_sensitivity": coldSensitivity,
-        "heat_sensitivity": heatSensitivity,
-      }),
-    );
+Future<int> registerUser() async {
+  final requestBody = {
+    "nickname": nicknameController.text.trim().isEmpty
+        ? "수룡이"
+        : nicknameController.text.trim(),
+    "age_group": selectedAge.toString().trim().isEmpty
+        ? "20대"
+        : selectedAge.toString().trim(),
+    "cold_sensitivity": coldSensitivity.round(),
+    "heat_sensitivity": heatSensitivity.round(),
+  };
 
+  final response = await http.post(
+    Uri.parse('$apiBaseUrl/user/register'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(requestBody),
+  );
+
+  if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-
     return data["user_id"];
   }
 
-  Future<void> updateUser(int userId) async {
-    await http.post(
-      Uri.parse('$apiBaseUrl/user/update'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "user_id": userId,
-        "nickname": nicknameController.text.trim(),
-        "age_group": selectedAge,
-        "cold_sensitivity": coldSensitivity,
-        "heat_sensitivity": heatSensitivity,
-      }),
-    );
-  }
+  throw Exception("회원가입 실패: ${response.statusCode} / ${response.body}");
+}
 
   Future<void> saveLocalUserInfo(int userId) async {
     final prefs = await SharedPreferences.getInstance();
