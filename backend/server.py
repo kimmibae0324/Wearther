@@ -12,13 +12,13 @@ import models
 # Outfit Constants
 # =============================================================================
 
-OUTFIT_SHORT_SHORT = "숏+숏"
-OUTFIT_SHORT_LONG = "숏+롱"
-OUTFIT_LONG_LONG = "롱+롱"
-OUTFIT_CARDIGAN = "가디건+긴"
-OUTFIT_ZIPUP = "집업+긴"
-OUTFIT_COAT = "코트+긴"
-OUTFIT_PADDING = "패딩"
+OUTFIT_SHORT_SHORT = "반팔과 반바지"
+OUTFIT_SHORT_LONG = "반팔과 긴바지"
+OUTFIT_LONG_LONG = "긴팔과 긴바지"
+OUTFIT_CARDIGAN = "가디건과 긴바지"
+OUTFIT_ZIPUP = "집업과 긴바지"
+OUTFIT_COAT = "코트와 긴바지"
+OUTFIT_PADDING = "두꺼운 패딩"
 
 
 # =============================================================================
@@ -47,27 +47,36 @@ def recommend_outfit(temp):
 # =============================================================================
 
 def generate_custom_message(user, weather_data):
+    temp = weather_data.get("temperature", 0)
+    feels_like = weather_data.get("recommended_temperature", 0)
+    
+    # 사용자 민감도 및 실제 기온/체감온도 차이에 따른 맞춤 멘트
     if user.heat_sensitivity >= 75:
-        sensitivity_text = "더위를 많이 타셔서 다소 후덥지근하게 느낄 수 있어요."
-    elif user.cold_sensitivity >= 75:
-        sensitivity_text = "추위에 민감하신 편이라 제법 쌀쌀하게 느껴질 수 있는 날씨예요."
+        sensitivity_text = f"더위를 많이 타시는 편이라, 실제 기온({temp}도)보다 조금 더 더운 체감 {feels_like}도 수준으로 느껴지실 거예요."
+    elif user.heat_sensitivity <= 25:
+        sensitivity_text = f"더위를 잘 안 타시는 편이라, 오늘 같은 날씨도 무난하게 체감 {feels_like}도 정도로 느끼실 것 같네요."
     else:
-        sensitivity_text = "활동하기 무난한 체감온도를 보이는 날이에요."
+        diff = feels_like - temp
+        if diff >= 1.0:
+            sensitivity_text = f"습도가 다소 높아 실제 기온보다 조금 더 덥게 느껴지는 날이에요. (체감 {feels_like}도)"
+        else:
+            sensitivity_text = f"오늘은 쾌적해서 실제 기온({temp}도)과 비슷하게 느껴지는 무난한 날씨예요."
 
     sky_str = weather_data.get("sky", "맑음")
-    pm_str = weather_data.get("pm10_grade", "보통(보라)")
+    pm_str = weather_data.get("pm10_grade", "보통")
     outfit = weather_data.get("recommended_outfit")
     rain = weather_data.get("rain_gear", "없음")
 
-    sentence1 = f"{user.nickname}님, 오늘은 전체적으로 {sky_str} 하늘에 미세먼지는 {pm_str} 수준이며, {sensitivity_text}"
+    # 자연스러운 문맥으로 조합
+    sentence1 = f"{user.nickname}님, 오늘 하늘은 '{sky_str}' 상태이고 미세먼지는 '{pm_str}' 수준입니다. {sensitivity_text}"
     
-    if rain != "필요없음" and rain != "없음":
-        sentence2 = f"이런 날씨에는 체온 조절에 알맞은 **{outfit}** 차림을 가장 추천해요."
-        sentence3 = f"또한 갑작스러운 강수에 대비해 외출 시 **{rain}**도 꼭 챙겨주세요!"
-        return f"{sentence1} {sentence2} {sentence3}"
+    if rain not in ["필요없음", "없음"]:
+        sentence2 = f"이런 날씨에는 체온 조절에 알맞은 {outfit} 차림을 추천해 드려요."
+        sentence3 = f"또한 갑작스러운 비에 대비해 외출 시 {rain}도 꼭 챙겨주세요!"
+        return f"{sentence1}\n{sentence2} {sentence3}"
     else:
-        sentence2 = f"오늘 같은 날에는 편안하고 쾌적하게 입을 수 있는 **{outfit}** 차림을 추천해요!"
-        return f"{sentence1} {sentence2}"
+        sentence2 = f"오늘 같은 날에는 편안하고 쾌적하게 활동할 수 있는 **{outfit}** 차림을 추천합니다!"
+        return f"{sentence1}\n{sentence2}"
 
 
 # =============================================================================

@@ -169,6 +169,16 @@ def map_to_grid(lat, lon):
 def get_safe_time():
     return datetime.now() - timedelta(hours=1)
 
+def calculate_summer_wind_chill(ta, rh):
+    """기상청 여름철 체감온도 산출식 (Stull의 습구온도 추정식 사용)"""
+    tw = (ta * math.atan(0.151977 * math.pow(rh + 8.313659, 0.5)) +
+          math.atan(ta + rh) - math.atan(rh - 1.67633) +
+          0.00391838 * math.pow(rh, 1.5) * math.atan(0.023101 * rh) - 4.686035)
+    
+    wind_chill = (-0.2442 + 0.55399 * tw + 0.45535 * ta - 
+                  0.0022 * math.pow(tw, 2) + 0.00278 * tw * ta + 3.0)
+    
+    return round(wind_chill, 1)
 
 # =============================================================================
 # Weather Data Management (날씨 데이터 관리)
@@ -248,7 +258,7 @@ def fetch_weather(nx, ny, lat, lon):
                 is_raining = True
 
     if is_raining:
-        rain_gear = "우비+우산"
+        rain_gear = "우비나 우산"
     else:
         rain_gear = get_rain_gear(pop_prob)
 
@@ -392,7 +402,7 @@ def get_sky(fcst_items):
 # 강수확률 기반 우산/우비 추천
 def get_rain_gear(pop_prob):
     if pop_prob >= 90:
-        return "우비+우산"
+        return "우비나 우산"
     elif pop_prob > 0:
         return "우비"
     else:
@@ -842,9 +852,16 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
         print("✅ DB에서 해당 위치의 날씨 찾았습니다.")
 
     # 5. 맞춤형 날씨 정보 생성 및 AI 메시지 생성
+    base_wind_chill = calculate_summer_wind_chill(
+        latest_weather.temperature, 
+        latest_weather.humidity
+    )
+    
     heat_weight = map_sensitivity(user.heat_sensitivity)
     cold_weight = map_sensitivity(user.cold_sensitivity)
-    recommended_temperature = latest_weather.temperature + heat_weight - cold_weight   
+    recommended_temperature = base_wind_chill + heat_weight   
+    
+    # 체감온도를 기반으로 옷차림 추천
     recommended_outfit = recommend_outfit(recommended_temperature) 
     sun_times = get_sun_times()
 
