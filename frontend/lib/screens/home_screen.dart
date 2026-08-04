@@ -55,7 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> futureForecast = []; // 실시간예보를 위한 코드
   List<Map<String, dynamic>> midForecast = []; // 주간예보를 위한 코드
   static const String umbrellaAlarmKey = 'isUmbrellaAlarmOn'; //[cite: 1]
-  static const String lastUmbrellaAlertKey = 'lastUmbrellaAlertSignature'; //[cite: 1]
+  static const String lastUmbrellaAlertKey =
+      'lastUmbrellaAlertSignature'; //[cite: 1]
   // --- [추가] 포춘쿠키 관련 변수 ---
   String fortuneText = "포춘쿠키를 열어보세요!";
   String luckyColor = "-";
@@ -63,78 +64,111 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isFortuneLoaded = false;
 
   // --- [추가] 포춘쿠키 API 호출 함수 ---
-Future<void> fetchFortune() async {
-  try {
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/fortune/today'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'user_id': widget.userId,
-      }),
-    );
+  Future<void> fetchFortune() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/fortune/today'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'user_id': widget.userId}),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final fortune = data['fortune'];
-      setState(() {
-        fortuneText = fortune['fortune_text'];
-        luckyColor = fortune['lucky_color'];
-        luckyPlace = fortune['lucky_place'];
-      });
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final fortune = data['fortune'];
+        setState(() {
+          fortuneText = fortune['fortune_text'];
+          luckyColor = fortune['lucky_color'];
+          luckyPlace = fortune['lucky_place'];
+        });
 
-      // 수정구를 누를 때처럼 팝업창(말풍선 형태)으로 오늘의 운세 띄우기
-      _showFortuneDialog();
+        // 수정구를 누를 때처럼 팝업창(말풍선 형태)으로 오늘의 운세 띄우기
+        _showFortuneDialog();
+      }
+    } catch (e) {
+      print('포춘쿠키 불러오기 오류: $e');
     }
-  } catch (e) {
-    print('포춘쿠키 불러오기 오류: $e');
   }
-}
 
-void _showFortuneDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        backgroundColor: Colors.white,
-        title: Row(
-          children: const [
-            Text('🥠🍀', style: TextStyle(fontSize: 24)),
-            SizedBox(width: 8),
-            Text('오늘의 포춘쿠키', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E2440))),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3EFFA),
-                borderRadius: BorderRadius.circular(16),
+  void _showFortuneDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          backgroundColor: Colors.white,
+          title: Row(
+            children: const [
+              Text('🥠🍀', style: TextStyle(fontSize: 24)),
+              SizedBox(width: 8),
+              Text(
+                '오늘의 포춘쿠키',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF2E2440),
+                ),
               ),
-              child: Text(
-                fortuneText,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.4, color: Color(0xFF2E2440)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3EFFA),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  fortuneText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                    color: Color(0xFF2E2440),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '🎨 행운의 색: $luckyColor',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF582F82),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '📍 행운의 장소: $luckyPlace',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF582F82),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  color: Color(0xFF582F82),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text('🎨 행운의 색: $luckyColor', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF582F82))),
-            const SizedBox(height: 6),
-            Text('📍 행운의 장소: $luckyPlace', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF582F82))),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인', style: TextStyle(color: Color(0xFF582F82), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
+
   // 안드로이드 에뮬레이터용 api 주소 변환 함수
   String get apiBaseUrl {
     if (kIsWeb) {
@@ -151,18 +185,19 @@ void _showFortuneDialog() {
   Future<void> fetchWeather() async {
     try {
       // 1. 실시간 GPS 위치 권한 확인 및 좌표 가져오기[cite: 2]
-      double currentLat = 37.2000; 
-      double currentLon = 127.0700; 
+      double currentLat = 37.2000;
+      double currentLon = 127.0700;
 
       try {
         LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
         }
-        
-        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
           Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high
+            desiredAccuracy: LocationAccuracy.high,
           );
           currentLat = position.latitude;
           currentLon = position.longitude;
@@ -178,42 +213,62 @@ void _showFortuneDialog() {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'user_id': widget.userId,
-          'latitude': currentLat,   // 실시간 GPS 위도 전송
-          'longitude': currentLon,  // 실시간 GPS 경도 전송
+          'latitude': currentLat, // 실시간 GPS 위도 전송
+          'longitude': currentLon, // 실시간 GPS 경도 전송
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          temperature = (data['current_weather']['temperature'] as num).toDouble();
-          recommendedTemperature = (data['current_weather']['recommended_temperature'] as num).toDouble();
+          temperature = (data['current_weather']['temperature'] as num)
+              .toDouble();
+          recommendedTemperature =
+              (data['current_weather']['recommended_temperature'] as num)
+                  .toDouble();
           humidity = data['current_weather']['humidity'];
           recommendedOutfit = data['current_weather']['recommended_outfit'];
           weather = data['current_weather']['sky'];
           customAdvice = data['custom_advice'] ?? '';
-          dust = data['current_weather']['pm10_grade'] ?? data['current_weather']['dust'] ?? '보통'; //[cite: 1, 2]
+          dust =
+              data['current_weather']['pm10_grade'] ??
+              data['current_weather']['dust'] ??
+              '보통'; //[cite: 1, 2]
 
-          characterState = (data['current_weather']['character_state'] ?? '보통_무표정').toString(); //[cite: 1]
+          characterState =
+              (data['current_weather']['character_state'] ?? '보통_무표정')
+                  .toString(); //[cite: 1]
 
-          futureForecast = List<Map<String, dynamic>>.from(data['future_forecast']);
+          futureForecast = List<Map<String, dynamic>>.from(
+            data['future_forecast'],
+          );
           midForecast = List<Map<String, dynamic>>.from(data['mid_forecast']);
         });
 
         await updateAndroidHomeWidget(); //[cite: 1] 안드로이드 홈 위젯 업데이트
 
         // ⭐ 강수확률 70% 이상 시 우산 알림 팝업 창 즉시 호출 반영 (세원 원본)[cite: 2]
-        if (data['umbrella_alert'] != null && data['umbrella_alert']['show_popup'] == true) {
+        if (data['umbrella_alert'] != null &&
+            data['umbrella_alert']['show_popup'] == true) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text("☔ 강수 알림", style: TextStyle(fontWeight: FontWeight.bold)),
+                title: const Text(
+                  "☔ 강수 알림",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 content: Text(data['umbrella_alert']['popup_message']),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("확인", style: TextStyle(color: Color(0xFF582F82), fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "확인",
+                      style: TextStyle(
+                        color: Color(0xFF582F82),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -221,7 +276,9 @@ void _showFortuneDialog() {
           });
         }
 
-        final umbrellaAlert = data['umbrella_alert'] ?? data['current_weather']?['umbrella_alert']; //[cite: 1]
+        final umbrellaAlert =
+            data['umbrella_alert'] ??
+            data['current_weather']?['umbrella_alert']; //[cite: 1]
         await handleUmbrellaAlert(umbrellaAlert); //[cite: 1]
 
         print(futureForecast);
@@ -273,7 +330,9 @@ void _showFortuneDialog() {
     final scheduledTime = getUmbrellaNotificationTime(rainTime);
 
     if (scheduledTime == null ||
-        scheduledTime.isBefore(DateTime.now().add(const Duration(minutes: 1)))) {
+        scheduledTime.isBefore(
+          DateTime.now().add(const Duration(minutes: 1)),
+        )) {
       await NotificationService.showUmbrellaNotificationNow(message: message);
       return;
     }
@@ -301,13 +360,7 @@ void _showFortuneDialog() {
 
     final now = DateTime.now();
 
-    var rainDateTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    var rainDateTime = DateTime(now.year, now.month, now.day, hour, minute);
 
     if (rainDateTime.isBefore(now)) {
       rainDateTime = rainDateTime.add(const Duration(days: 1));
@@ -362,9 +415,7 @@ void _showFortuneDialog() {
       case 'padding':
         return '패딩';
       default:
-        return recommendedOutfit.isNotEmpty
-            ? recommendedOutfit
-            : '날씨 맞춤 옷차림';
+        return recommendedOutfit.isNotEmpty ? recommendedOutfit : '날씨 맞춤 옷차림';
     }
   }
 
@@ -373,10 +424,19 @@ void _showFortuneDialog() {
       return;
     }
 
-    await HomeWidget.saveWidgetData<String>('widget_character_state', characterState);
+    await HomeWidget.saveWidgetData<String>(
+      'widget_character_state',
+      characterState,
+    );
     await HomeWidget.saveWidgetData<String>('widget_face', widgetFaceEmoji);
-    await HomeWidget.saveWidgetData<String>('widget_outfit', '옷 추천: $widgetOutfitLabel');
-    await HomeWidget.saveWidgetData<String>('widget_temp', '기온: ${temperature.toStringAsFixed(1)}°C');
+    await HomeWidget.saveWidgetData<String>(
+      'widget_outfit',
+      '옷 추천: $widgetOutfitLabel',
+    );
+    await HomeWidget.saveWidgetData<String>(
+      'widget_temp',
+      '기온: ${temperature.toStringAsFixed(1)}°C',
+    );
     await HomeWidget.saveWidgetData<String>('widget_weather', '날씨: $weather');
 
     await HomeWidget.updateWidget(
@@ -594,17 +654,44 @@ void _showFortuneDialog() {
   Widget get weatherIcon {
     switch (weather) {
       case '맑음':
-        return const Icon(Icons.wb_sunny_rounded, color: Color(0xFFF5B301), size: 52);
+        return const Icon(
+          Icons.wb_sunny_rounded,
+          color: Color(0xFFF5B301),
+          size: 52,
+        );
       case '구름많음':
-        return const Icon(LucideIcons.cloudSun, color: Color(0xFF90A4AE), size: 52);
+        return const Icon(
+          LucideIcons.cloudSun,
+          color: Color(0xFF90A4AE),
+          size: 52,
+        );
       case '흐림':
-        return const Icon(Icons.cloud_rounded, color: Color(0xFFB8C5D0), size: 52);
+        return const Icon(
+          Icons.cloud_rounded,
+          color: Color(0xFFB8C5D0),
+          size: 52,
+        );
       case '비':
-        return const Icon(LucideIcons.cloudRain, color: Color.fromRGBO(138, 216, 255, 1), size: 52);
+      case '소나기':
+      case '비/눈':
+        return const Icon(
+          LucideIcons.cloudRain,
+          color: Color(0xFF6B8DD6),
+          size: 52,
+        );
       case '눈':
-        return const Icon(LucideIcons.cloudSnow, color: Color(0xFF42A5F5), size: 52);
+        return const Icon(
+          LucideIcons.cloudSnow,
+          color: Color(0xFF8DBBE8),
+          size: 52,
+        );
+
       default:
-        return const Icon(Icons.ac_unit_rounded, color: Color(0xFF81D4FA), size: 52);
+        return const Icon(
+          Icons.cloud_rounded,
+          color: Color(0xFFB8C5D0),
+          size: 52,
+        );
     }
   }
 
@@ -618,7 +705,7 @@ void _showFortuneDialog() {
     if (weather == '비' || recommendedOutfit == 'raincoat') {
       return 'assets/characters/dragon_outfit_raincoat.png';
     }
-    
+
     // ⭐ [수정] 백엔드에서 넘어오는 한글 명칭도 인식할 수 있도록 case 추가
     switch (recommendedOutfit) {
       case '숏+숏':
@@ -691,7 +778,8 @@ void _showFortuneDialog() {
     final DateTime now = DateTime.now();
     final int currentMinutes = now.hour * 60 + now.minute;
     final times = sunriseSunsetMinutes;
-    return currentMinutes >= times['sunrise']! && currentMinutes < times['sunset']!;
+    return currentMinutes >= times['sunrise']! &&
+        currentMinutes < times['sunset']!;
   }
 
   String get backgroundImagePath {
@@ -839,10 +927,7 @@ void _showFortuneDialog() {
                   ],
                 ),
                 child: const Center(
-                  child: Text(
-                    '🥠',
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  child: Text('🥠', style: TextStyle(fontSize: 24)),
                 ),
               ),
             ),
@@ -895,9 +980,7 @@ void _showFortuneDialog() {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SettingsScreen(
-                      userId: widget.userId,
-                    ),
+                    builder: (context) => SettingsScreen(userId: widget.userId),
                   ),
                 );
               },
@@ -929,7 +1012,6 @@ void _showFortuneDialog() {
       ],
     );
   }
-
 
   Widget _buildWeatherCard() {
     return GestureDetector(
@@ -1132,11 +1214,7 @@ void _showFortuneDialog() {
 
           // 수정구에서 나오는 마법 말풍선
           if (showBubble)
-            Positioned(
-              right: 118,
-              bottom: 92,
-              child: _buildMagicBubble(),
-            ),
+            Positioned(right: 118, bottom: 92, child: _buildMagicBubble()),
 
           // 수정구 버튼
           Positioned(
@@ -1364,6 +1442,7 @@ void _showFortuneDialog() {
       ],
     );
   }
+
   Widget _buildRecommendCard() {
     return Container(
       width: double.infinity,

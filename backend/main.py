@@ -48,9 +48,9 @@ models.Base.metadata.create_all(bind=engine)
 
 API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
 
-FCST_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"
-NCST_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
-VILAGE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
+FCST_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"
+NCST_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+VILAGE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
 
 MID_LAND_URL = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst"
 MID_TA_URL = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa"
@@ -191,8 +191,14 @@ def fetch_weather(nx, ny, lat, lon):
     }
 
     # 현재 날씨 조회
-    response = requests.get(NCST_URL, params=params, timeout=15)
-    response.raise_for_status() # 요청 실패 시 예외 발생
+    try:
+        response = requests.get(NCST_URL, params=params, timeout=15)
+        response.raise_for_status() # 요청 실패 시 예외 발생
+    except requests.exceptions.RequestException as e:
+        print("NCST 오류:", e)
+        return None
+            
+
     items = response.json()["response"]["body"]["items"]["item"]
 
     temp = 0.0
@@ -215,14 +221,16 @@ def fetch_weather(nx, ny, lat, lon):
         "nx": nx,
         "ny": ny,
     }
-
-    fcst_response = requests.get(
-        FCST_URL,
-        params=fcst_params,
-        timeout=15
-    )
-
-    fcst_response.raise_for_status() # 요청 실패 시 예외 발생
+    try:
+        fcst_response = requests.get(
+            FCST_URL,
+            params=fcst_params,
+            timeout=15
+        )
+        fcst_response.raise_for_status() # 요청 실패 시 예외 발생
+    except requests.exceptions.RequestException as e:
+        print("FCST 오류:", e)
+        return None
 
     fcst_items = fcst_response.json()["response"]["body"]["items"]["item"]
 
@@ -789,14 +797,18 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
     # 4. 날씨 정보 조회 및 갱신
     if latest_weather is None:
         print("❌ DB에 해당 위치의 날씨 정보가 없습니다.")
+        
+        weather_info = fetch_weather(nx, ny, request.latitude, request.longitude)
 
-        weather_info = fetch_weather(
-            nx,
-            ny,
-            request.latitude,
-            request.longitude
-        )
+        print("weather_info =", weather_info)
+        print("weather_info is None =", weather_info is None)
 
+        if weather_info is None:
+            return {
+                "status": "error",
+                "message": "날씨 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요."
+            }
+        
         latest_weather = save_weather(
             weather_info,
             nx,
@@ -813,6 +825,12 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
             request.latitude,
             request.longitude
         )
+
+        if weather_info is None:
+            return {
+                "status": "error",
+                "message": "기상청 API 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요."
+            }
 
         latest_weather = update_weather(
             latest_weather,

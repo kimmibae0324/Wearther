@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_flutter/lucide_flutter.dart'; // 날씨아이콘(눈,비)
+import 'package:lucide_flutter/lucide_flutter.dart'; // 날씨 아이콘(눈,비)
 
 class WeatherDetailScreen extends StatelessWidget {
   const WeatherDetailScreen({
@@ -10,7 +10,7 @@ class WeatherDetailScreen extends StatelessWidget {
     required this.weather,
     required this.dust,
     required this.futureForecast,
-    required this.midForecast, // [추가됨] 주간예보 데이터
+    required this.midForecast,
     required this.age,
     required this.coldLevel,
     required this.heatLevel,
@@ -22,8 +22,7 @@ class WeatherDetailScreen extends StatelessWidget {
   final String weather;
   final String dust;
   final List<Map<String, dynamic>> futureForecast;
-  final List<Map<String, dynamic>> midForecast; // [추가됨] 주간예보 데이터
-
+  final List<Map<String, dynamic>> midForecast;
   final String age;
   final String coldLevel;
   final String heatLevel;
@@ -35,6 +34,7 @@ class WeatherDetailScreen extends StatelessWidget {
   static const Color borderViolet = Color(0xFFE2D9F0);
 
   IconData getWeatherIcon(String value) {
+    if (value.contains('소나기')) return LucideIcons.cloudRain;
     if (value.contains('비')) return LucideIcons.cloudRain;
     if (value.contains('눈')) return LucideIcons.cloudSnow;
     if (value.contains('구름')) return Icons.cloud_rounded;
@@ -43,6 +43,7 @@ class WeatherDetailScreen extends StatelessWidget {
   }
 
   Color getWeatherIconColor(String value) {
+    if (value.contains('소나기')) return const Color(0xFF6B8DD6);
     if (value.contains('비')) return const Color(0xFF6B8DD6);
     if (value.contains('눈')) return const Color(0xFF8DBBE8);
     if (value.contains('구름')) return const Color(0xFFB8C5D0);
