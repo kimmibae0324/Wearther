@@ -595,7 +595,7 @@ def get_short_forecast(current_temp, nx, ny):
             if d != today:
                 dates.append(d)
 
-            if len(dates) == 4:
+            if len(dates) == 5:
                 break
 
         # 오늘, 내일, 모레, 그 다음 날 순으로 결과 리스트에 추가            
@@ -690,7 +690,7 @@ def get_mid_forecast():
         ta_item = res_ta['response']['body']['items']['item'][0]
 
         # 5~7일 후 예보 데이터 추출
-        for day in range(5,8):
+        for day in range(5,7):
 
             min_t = ta_item.get(f'taMin{day}')
             max_t = ta_item.get(f'taMax{day}')
