@@ -49,35 +49,27 @@ def recommend_outfit(temp):
 def generate_custom_message(user, weather_data):
     temp = weather_data.get("temperature", 0)
     feels_like = weather_data.get("recommended_temperature", 0)
+    outfit = weather_data.get("recommended_outfit")
+    rain = weather_data.get("rain_gear", "없음")
     
-    # 사용자 민감도 및 실제 기온/체감온도 차이에 따른 맞춤 멘트
+    # 1. 체감온도 및 옷차림 위주의 메인 메시지
     if user.heat_sensitivity >= 75:
-        sensitivity_text = f"더위를 많이 타시는 편이라, 실제 기온({temp}도)보다 조금 더 더운 체감 {feels_like}도 수준으로 느껴지실 거예요."
+        main_msg = f"{user.nickname}님, 더위를 많이 타시는 편이라 오늘은 체감 {feels_like}도 수준으로 덥게 느껴지실 수 있어요. 시원하고 쾌적한 {outfit} 차림을 강력히 추천해 드려요!"
     elif user.heat_sensitivity <= 25:
-        sensitivity_text = f"더위를 잘 안 타시는 편이라, 오늘 같은 날씨도 무난하게 체감 {feels_like}도 정도로 느끼실 것 같네요."
+        main_msg = f"{user.nickname}님, 더위를 덜 타셔서 실제 기온({temp}도)보다 무난하게 체감 {feels_like}도 정도로 느끼실 것 같네요. 오늘 외출에는 {outfit} 차림이 딱 좋겠어요."
     else:
         diff = feels_like - temp
         if diff >= 1.0:
-            sensitivity_text = f"습도가 다소 높아 실제 기온보다 조금 더 덥게 느껴지는 날이에요. (체감 {feels_like}도)"
+            main_msg = f"{user.nickname}님, 오늘은 습도가 다소 높아 실제 기온보다 더운 체감 {feels_like}도입니다. 쾌적하게 입을 수 있는 {outfit} 차림을 추천해요."
         else:
-            sensitivity_text = f"오늘은 쾌적해서 실제 기온({temp}도)과 비슷하게 느껴지는 무난한 날씨예요."
+            main_msg = f"{user.nickname}님, 오늘은 실제 기온과 비슷한 체감 {feels_like}도로 쾌적한 날씨예요. 활동하기 편안한 {outfit} 차림은 어떠세요?"
 
-    sky_str = weather_data.get("sky", "맑음")
-    pm_str = weather_data.get("pm10_grade", "보통")
-    outfit = weather_data.get("recommended_outfit")
-    rain = weather_data.get("rain_gear", "없음")
-
-    # 자연스러운 문맥으로 조합
-    sentence1 = f"{user.nickname}님, 오늘 하늘은 '{sky_str}' 상태이고 미세먼지는 '{pm_str}' 수준입니다. {sensitivity_text}"
-    
+    # 2. 비가 올 경우에만 우산/우비 챙기라는 메시지 추가
     if rain not in ["필요없음", "없음"]:
-        sentence2 = f"이런 날씨에는 체온 조절에 알맞은 {outfit} 차림을 추천해 드려요."
-        sentence3 = f"또한 갑작스러운 비에 대비해 외출 시 {rain}도 꼭 챙겨주세요!"
-        return f"{sentence1}\n{sentence2} {sentence3}"
-    else:
-        sentence2 = f"오늘 같은 날에는 편안하고 쾌적하게 활동할 수 있는 **{outfit}** 차림을 추천합니다!"
-        return f"{sentence1}\n{sentence2}"
+        main_msg += f"\n비 소식이 있으니 외출 시 {rain}도 꼭 챙겨주세요!"
 
+    # 최종 메시지 반환
+    return main_msg
 
 # =============================================================================
 # Notification Service (우산 알림 서비스)
