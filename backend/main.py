@@ -864,7 +864,6 @@ def get_custom_weather(request: LocationRequest, db: Session = Depends(get_db)):
     # 체감온도를 기반으로 옷차림 추천
     recommended_outfit = recommend_outfit(recommended_temperature) 
     sun_times = get_sun_times()
-
     weather_data = {
         "temperature": latest_weather.temperature,
         "recommended_temperature": recommended_temperature,

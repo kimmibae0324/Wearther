@@ -438,9 +438,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showFeedbackDialog() {
     final TextEditingController feedbackController = TextEditingController();
 
+    final messenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
       builder: (dialogContext) {
+        final navigator = Navigator.of(dialogContext);
+        final focusScope = FocusScope.of(dialogContext);
+
         return Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -538,7 +543,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           height: 52,
                           child: OutlinedButton(
                             onPressed: () {
-                              Navigator.pop(dialogContext);
+                              focusScope.unfocus();
+                              navigator.pop();
                             },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: sungshinViolet,
@@ -571,7 +577,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               final feedback = feedbackController.text.trim();
 
                               if (feedback.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(content: Text('피드백을 입력해주세요.')),
                                 );
                                 return;
@@ -579,9 +585,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                               await sendFeedback(widget.userId, feedback);
 
-                              Navigator.pop(dialogContext);
+                              if (!mounted) return;
 
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              focusScope.unfocus();
+                              navigator.pop();
+
+                              messenger.showSnackBar(
                                 const SnackBar(
                                   content: Text('피드백이 저장되었어요.'),
                                   duration: Duration(seconds: 2),
@@ -614,8 +623,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       },
-    ).then((_) {
-      feedbackController.dispose();
-    });
+    );
   }
 }

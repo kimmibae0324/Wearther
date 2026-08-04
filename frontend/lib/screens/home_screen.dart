@@ -390,29 +390,25 @@ class _HomeScreenState extends State<HomeScreen> {
     final outfit = recommendedOutfit.trim();
 
     switch (outfit) {
-      case '숏+숏':
-      case 'short_short':
+      case '반팔과 반바지':
         return '반팔+반바지';
-      case '숏+롱':
-      case 'short_long':
+
+      case '반팔과 긴바지':
         return '반팔+긴바지';
-      case '롱+롱':
-      case 'long_long':
+
+      case '긴팔과 긴바지':
         return '긴팔+긴바지';
-      case '가디건+긴':
-      case 'cardigan_long':
-      case 'cardigan':
+
+      case '가디건과 긴바지':
         return '가디건+긴바지';
-      case '집업+긴':
-      case 'zipup_long':
-      case 'zipup':
+
+      case '집업과 긴바지':
         return '집업+긴바지';
-      case '코트+긴':
-      case 'coat_long':
-      case 'coat':
+
+      case '코트와 긴바지':
         return '코트+긴바지';
-      case '패딩':
-      case 'padding':
+
+      case '두꺼운 패딩':
         return '패딩';
       default:
         return recommendedOutfit.isNotEmpty ? recommendedOutfit : '날씨 맞춤 옷차림';
@@ -708,29 +704,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // ⭐ [수정] 백엔드에서 넘어오는 한글 명칭도 인식할 수 있도록 case 추가
     switch (recommendedOutfit) {
-      case '숏+숏':
-      case 'short_short':
+      case '반팔과 반바지':
         return 'assets/characters/dragon_outfit_short_short.png';
-      case '숏+롱':
-      case 'short_long':
+      case '반팔과 긴바지':
         return 'assets/characters/dragon_outfit_short_long.png';
-      case '롱+롱':
-      case 'long_long':
+      case '긴팔과 긴바지':
         return 'assets/characters/dragon_outfit_long_long.png';
-      case '가디건+긴':
-      case 'cardigan_long':
-      case 'cardigan':
+      case '가디건과 긴바지':
         return 'assets/characters/dragon_outfit_cardigan.png';
-      case '집업+긴':
-      case 'zipup_long':
-      case 'zipup':
+      case '집업과 긴바지':
         return 'assets/characters/dragon_outfit_zipup.png';
-      case '코트+긴':
-      case 'coat_long':
-      case 'coat':
+      case '코트와 긴바지':
         return 'assets/characters/dragon_outfit_coat.png';
-      case '패딩':
-      case 'padding':
+      case '두꺼운 패딩':
         return 'assets/characters/dragon_outfit_padding.png';
       default:
         return 'assets/characters/dragon_outfit_long_long.png';
@@ -802,22 +788,25 @@ class _HomeScreenState extends State<HomeScreen> {
       return '비가 와요.\n우비를 챙기면 좋아요.\n$dustMessage';
     }
     switch (recommendedOutfit) {
-      case "short_short":
+      case "반팔과 반바지":
         return "반팔과 반바지를 추천해요.\n$dustMessage";
-      case "short_long":
+
+      case "반팔과 긴바지":
         return "반팔과 긴바지를 추천해요.\n$dustMessage";
-      case "long_long":
+
+      case "긴팔과 긴바지":
         return "긴팔과 긴바지를 추천해요.\n$dustMessage";
-      case "cardigan_long":
-      case "cardigan":
+
+      case "가디건과 긴바지":
         return "가디건과 긴바지를 추천해요.\n$dustMessage";
-      case "zipup_long":
-      case "zipup":
+
+      case "집업과 긴바지":
         return "집업과 긴바지를 입으면 좋아요.\n$dustMessage";
-      case "coat_long":
-      case "coat":
+
+      case "코트와 긴바지":
         return "코트와 긴바지로 따뜻하게 입어요.\n$dustMessage";
-      case "padding":
+
+      case "두꺼운 패딩":
         return "패딩으로 든든하게 입어요.\n$dustMessage";
       default:
         return "오늘 날씨에 맞는 옷차림을 확인해보세요.\n$dustMessage";
@@ -1104,23 +1093,27 @@ class _HomeScreenState extends State<HomeScreen> {
       return '더위를 잘 타는 편이라 답답하지 않은 옷차림이 좋아요. 통풍이 잘 되는 옷을 추천해요.';
     }
     switch (recommendedOutfit) {
-      case 'short_short':
+      case '반팔과 반바지':
         return '오늘은 체감상 더운 날씨예요. 반팔과 반바지로 가볍게 입기 좋아요.';
-      case 'short_long':
+
+      case '반팔과 긴바지':
         return '오늘은 체감상 따뜻한 날씨예요. 반팔에 긴바지 정도면 편하게 입을 수 있어요.';
-      case 'long_long':
+
+      case '긴팔과 긴바지':
         return '오늘은 체감상 무난한 날씨예요. 긴팔과 긴바지 정도면 편하게 입을 수 있어요.';
-      case 'cardigan_long':
-      case 'cardigan':
+
+      case '가디건과 긴바지':
         return '오늘은 살짝 서늘할 수 있어요. 가디건과 긴바지를 함께 입으면 좋아요.';
-      case 'zipup_long':
-      case 'zipup':
+
+      case '집업과 긴바지':
         return '오늘은 제법 선선한 날씨예요. 집업과 긴바지를 챙기면 든든해요.';
-      case 'coat_long':
-      case 'coat':
+
+      case '코트와 긴바지':
         return '오늘은 체감상 쌀쌀한 날씨예요. 코트와 긴바지로 따뜻하게 입는 걸 추천해요.';
-      case 'padding':
-        return '오늘은 많이 추울 수 있어요. 패딩으로 체온을 따뜻하게 유지해주세요.';
+
+      case '두꺼운 패딩':
+        return '오늘은 많이 추울 수 있어요. 두꺼운 패딩으로 체온을 따뜻하게 유지해주세요.';
+
       default:
         return '오늘 날씨와 체감에 맞춰 편안한 옷차림을 추천해드릴게요.';
     }
