@@ -5,9 +5,15 @@ import 'services/notification_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NotificationService.initialize();
-
   runApp(const WeartherApp());
+
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    try {
+      await NotificationService.initialize();
+    } catch (e) {
+      debugPrint('알림 초기화 오류: $e');
+    }
+  });
 }
 
 class WeartherApp extends StatelessWidget {
