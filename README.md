@@ -433,24 +433,24 @@ Wearther/
 ├── frontend/
 │   ├── lib/
 │   │   ├── main.dart
-│   │   ├── screens/          # 주요 화면
+│   │   ├── screens/         # 주요 화면
 │   │   ├── services/        # 알림 등 서비스 로직
 │   │   └── widgets/         # 공통 위젯
 │   ├── android/             # Android 위젯/네이티브 설정
+│   ├── assets/              # 앱 리소스
 │   └── pubspec.yaml
-│   ├── assets/
 │
 ├── backend/
-│   ├── app.py
 │   ├── main.py              # FastAPI 실행 및 주요 API
 │   ├── server.py            # 추천 및 서버 로직
 │   ├── models.py            # DB 모델
 │   ├── database.py          # DB 연결
-│   ├── requirements.txt
-│   ├── weather_api.py
+│   ├── requirements.txt     # Python 패키지 목록
+│   └── .env.example         # 환경변수 설정 예시
 │
-├── data/
-├── docs/                    # 이미지 및 문서
+├── data/                    # 프로젝트 데이터
+├── images/                  # README용 앱 화면 캡처
+├── .gitignore
 └── README.md
 ```
 
@@ -472,19 +472,20 @@ cd Wearther
 Python 가상환경 사용을 권장합니다.
 
 ```bash
-python -m venv venv
+cd backend
+python -m venv .venv
 ```
 
 ### Windows
 
 ```bash
-venv\Scripts\activate
+.venv\Scripts\activate
 ```
 
 ### macOS / Linux
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 패키지를 설치합니다.
@@ -497,8 +498,8 @@ pip install -r requirements.txt
 
 ## 3. MySQL Setup
 
-MySQL에 Wearther용 데이터베이스를 생성하고
-프로젝트의 DB 연결 정보를 자신의 환경에 맞게 설정합니다.
+MySQL에 'weather_app_db' 데이터베이스를 생성하고
+'backend/database.py'의 MySQL 연결 정보를 자신의 환경에 맞게 설정합니다.
 
 예시:
 
@@ -509,18 +510,18 @@ DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE
 ---
 
 ## 4. API Key Setup
+Wearther는 기상청 API와 WAQI API를 사용합니다.
 
-다음 API를 사용하기 위해 API Key 또는 Token이 필요합니다.
+backend/.env 파일을 생성하고 다음과 같이 입력합니다.
 
 ```env
 KMA_API_KEY=YOUR_KMA_API_KEY
 WAQI_TOKEN=YOUR_WAQI_TOKEN
-OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 ```
 
-> ⚠️ API Key, Token, DB Password 등 민감한 정보는 GitHub에 직접 업로드하지 마세요.
+> ⚠️ 실제 API Key, Token, DB Password 등 민감한 정보는 GitHub에 업로드하지 않습니다.
 
-`.env` 파일을 사용하는 경우 `.gitignore`에 추가해주세요.
+.env.example을 참고하여 환경변수를 설정할 수 있습니다.
 
 ```gitignore
 .env
