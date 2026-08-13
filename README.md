@@ -224,7 +224,7 @@ Wearther는 Android 홈 화면 위젯을 제공합니다.
 # 🏗️ System Architecture
 
 ```text
-                         User
+                          User
                            │
                            ▼
                     Flutter Mobile App
@@ -234,29 +234,30 @@ Wearther는 Android 홈 화면 위젯을 제공합니다.
                            ▼
                        FastAPI
                     Backend Server
-                    ┌──────┴──────┐
-                    │             │
-                    ▼             ▼
-                  MySQL       External APIs
-                               ┌─────┴─────┐
-                               │           │
-                               ▼           ▼
-                           기상청 API    WAQI API
-                               │           │
-                               └─────┬─────┘
-                                     │
-                                     ▼
-                           Weather Data Integration
-                                     │
-                                     ▼
-                           Recommendation Logic
-                                     │
-                        ┌────────────┼────────────┐
-                        ▼            ▼            ▼
-                     Outfit      Message      Umbrella
-                   Recommendation  Generation    Alert
-                        │
-                        ▼
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+           MySQL       기상청 API     WAQI API
+              │            │            │
+              │            └─────┬──────┘
+              │                  ▼
+              │          Weather Data Integration
+              │                  │
+              └──────────┬───────┘
+                         ▼
+                 Recommendation Logic
+                         │
+            ┌────────────┼────────────┐
+            ▼            ▼            ▼
+        Outfit        Custom       Umbrella
+     Recommendation   Message        Alert
+            │            │            │
+            └────────────┼────────────┘
+                         ▼
+                  FastAPI Response
+                         │
+                         ▼
                     Flutter App
 ```
 
@@ -287,22 +288,24 @@ Wearther는 현재 날씨 정보와 사용자의 특성을 함께 활용합니�
 
 ## 2. 다양한 외부 데이터 통합
 
-Wearther는 하나의 데이터 소스에 의존하지 않고
-서로 다른 외부 데이터를 통합하여 사용합니다.
+Wearther는 여러 외부 API의 데이터를 통합하여 서비스에 활용합니다.
 
 ### 기상청 API
 
-* 현재 날씨
-* 기온
-* 습도
-* 강수 정보
-* 단기 예보
+* 현재 기온 및 습도
+* 하늘 상태 및 강수 정보
 * 시간대별 예보
-* 주간 예보
+* 단기·중기 예보
 
 ### WAQI API
 
-* 위치 기반 PM10 미세먼지
+* GPS 위치 기반 PM10 미세먼지 정보
+
+```text
+기상청 API   ─┐
+            ├→ 날씨 데이터 통합 → 추천 정보
+WAQI API ───┘
+```
 
 수집한 데이터는 Wearther 내부에서 통합되어
 옷차림, 우산, 미세먼지 안내 등의 추천 정보로 활용됩니다.
@@ -319,25 +322,24 @@ Wearther는 숫자 데이터를 그대로 보여주는 것에 그치지 않고
 ```text
 날씨 데이터
     ↓
-옷차림 + 우산 + 추천 메시지
+옷차림 추천 + 우산 알림 + 맞춤형 메시지
 ```
 
 ### 미세먼지 정보
 
 ```text
-PM10
+PM10 농도
   ↓
 미세먼지 등급
   ↓
-수정구 색상 + 안내 메시지
+수정구 색상 표현 + 안내 메시지
 ```
 
 ---
 
 ## 4. API 호출 최적화
 
-외부 API의 불필요한 반복 호출을 줄이기 위해
-데이터 재사용 및 캐싱 방식을 적용했습니다.
+외부 API의 불필요한 반복 호출을 줄이기 위해 DB 재사용 및 캐싱 방식을 적용했습니다.
 
 ### 현재 날씨
 
@@ -345,6 +347,8 @@ PM10
 사용자 요청
    ↓
 GPS 위치 확인
+   ↓
+기상청 격자 좌표 변환
    ↓
 DB 최근 데이터 조회
    ↓
