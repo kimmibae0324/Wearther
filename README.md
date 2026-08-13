@@ -428,8 +428,6 @@ Wearther는 MySQL과 SQLAlchemy를 사용합니다.
 
 # 📂 Project Structure
 
-> 실제 GitHub 저장소의 폴더 구조에 맞게 경로를 수정해주세요.
-
 ```text
 Wearther/
 ├── frontend/
