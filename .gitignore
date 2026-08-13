@@ -1,0 +1,10 @@
+# 환경변수
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
