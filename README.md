@@ -523,10 +523,6 @@ WAQI_TOKEN=YOUR_WAQI_TOKEN
 
 .env.example을 참고하여 환경변수를 설정할 수 있습니다.
 
-```gitignore
-.env
-```
-
 ---
 
 ## 5. Backend Run
