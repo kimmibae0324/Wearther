@@ -499,7 +499,7 @@ pip install -r requirements.txt
 ## 3. MySQL Setup
 
 MySQL에 'weather_app_db' 데이터베이스를 생성하고
-'backend/database.py'의 MySQL 연결 정보를 자신의 환경에 맞게 설정합니다.
+`backend/database.py`의 MySQL 연결 정보를 자신의 환경에 맞게 설정합니다.
 
 예시:
 
@@ -510,9 +510,10 @@ DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE
 ---
 
 ## 4. API Key Setup
+
 Wearther는 기상청 API와 WAQI API를 사용합니다.
 
-backend/.env 파일을 생성하고 다음과 같이 입력합니다.
+`backend/.env` 파일을 생성하고 다음과 같이 입력합니다.
 
 ```env
 KMA_API_KEY=YOUR_KMA_API_KEY
@@ -521,7 +522,8 @@ WAQI_TOKEN=YOUR_WAQI_TOKEN
 
 > ⚠️ 실제 API Key, Token, DB Password 등 민감한 정보는 GitHub에 업로드하지 않습니다.
 
-.env.example을 참고하여 환경변수를 설정할 수 있습니다.
+```text
+필요한 환경변수는 .env.example 파일에서 확인할 수 있습니다.
 
 ---
 
