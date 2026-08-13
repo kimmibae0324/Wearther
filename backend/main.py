@@ -5,7 +5,10 @@
 # 표준 라이브러리
 import math
 import random
+import os
 from datetime import datetime, timedelta
+
+from dotenv import load_dotenv
 
 # 외부 라이브러리
 import requests
@@ -46,7 +49,10 @@ models.Base.metadata.create_all(bind=engine)
 # API & Constants
 # =============================================================================
 
-API_KEY = 'c36c7cc6ad2021103b124c01fbcba5510ee35ca7d30bebfc369187fb8b34324b'
+load_dotenv()
+
+API_KEY = os.getenv("KMA_API_KEY")
+WAQI_TOKEN = os.getenv("WAQI_TOKEN")
 
 FCST_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"
 NCST_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
@@ -55,7 +61,6 @@ VILAGE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilag
 MID_LAND_URL = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst"
 MID_TA_URL = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa"
 
-WAQI_TOKEN = '84b438216347483d144278db7a97f068b1527135'
 
 SKY_MAP = {
     "1": "맑음",
