@@ -25,7 +25,7 @@ Wearther는 이러한 고민을 줄이기 위해
 **현재 위치의 날씨 정보와 사용자 특성을 함께 활용하여 실제 행동으로 이어지는 정보를 제공**합니다.
 
 ### Wearther Flow
-
+```text
 **현재 위치 확인**
 ↓
 **날씨 · 미세먼지 정보 수집**
@@ -33,7 +33,7 @@ Wearther는 이러한 고민을 줄이기 위해
 **사용자 특성 반영**
 ↓
 **맞춤 옷차림 및 외출 정보 추천**
-
+```
 ---
 
 # ✨ Key Features
@@ -207,16 +207,17 @@ Wearther는 Android 홈 화면 위젯을 제공합니다.
 # 📱 Screenshots
 
 
-| Start                                      | User Info                                       | Home                                     |
-| ------------------------------------------ | ---------------------------------------------   | -------------------------------------- |
-| <img src="./images/start.png" width="220"> |  <img src="./images/user_info.png" width="220"> | <img src="./images/home.png" width="220">  |
+| Start | User Info | Home |
+|---|---|---|
+| <img src="./images/start.png" width="220"> | <img src="./images/user_info.png" width="220"> | <img src="./images/home.png" width="220"> |
 
-| Weather Detail                                      | Dress Up                                       | Settings                         |
-| ------------------------------------------- | --------------------------------------------   | -------------------------------------- |
-| <img src="./images/weather_detail.png" width="220"> |  <img src="./images/dress_up.png" width="220"> | <img src="./images/setting.png" width="220"> |
-| Weather Detail                                                                    
-| ------------------------------------------- | 
-| <img src="./images/widget.png" width="220"> |
+| Weather Detail | Dress Up | Settings |
+|---|---|---|
+| <img src="./images/weather_detail.png" width="220"> | <img src="./images/dress_up.png" width="220"> | <img src="./images/settings.png" width="220"> |
+
+| Widget |  |  |
+|---|---|---|
+| <img src="./images/widget.png" width="220"> |  |  |
 
 ---
 
