@@ -229,11 +229,11 @@ Wearther는 Android 홈 화면 위젯을 제공합니다.
                            ▼
                     Flutter Mobile App
                            │
-                    GPS + User ID
+                      GPS + User ID
                            │
                            ▼
-                       FastAPI
-                    Backend Server
+                        FastAPI
+                     Backend Server
                            │
               ┌────────────┼────────────┐
               │            │            │
@@ -242,7 +242,7 @@ Wearther는 Android 홈 화면 위젯을 제공합니다.
               │            │            │
               │            └─────┬──────┘
               │                  ▼
-              │          Weather Data Integration
+              │       Weather Data Integration
               │                  │
               └──────────┬───────┘
                          ▼
@@ -753,7 +753,7 @@ AI 추천에 반영
 
 ---
 
-# 🐉 Wearther
+# ⛅️ Wearther
 
 ### **오늘 뭐 입지?**
 
