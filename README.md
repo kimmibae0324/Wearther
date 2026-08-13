@@ -524,7 +524,7 @@ WAQI_TOKEN=YOUR_WAQI_TOKEN
 
 ```text
 필요한 환경변수는 .env.example 파일에서 확인할 수 있습니다.
-
+```
 ---
 
 ## 5. Backend Run
